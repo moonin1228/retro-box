@@ -20,5 +20,6 @@
   "useTabs": false,
   "embeddedLanguageFormatting": "auto",
   "printWidth": 100,
-  "endOfLine": "lf"
+  "endOfLine": "lf",
+  "plugins": ["prettier-plugin-tailwindcss"]
 }
