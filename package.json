@@ -10,19 +10,25 @@
     "lint:fix": "npm run lint -- --fix",
     "preview": "vite preview",
     "format": "prettier --write .",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "test": "jest",
+    "test:mem": "jest src/tests/memory.test.js"
   },
   "dependencies": {
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.27.7",
+    "@babel/preset-env": "^7.27.2",
     "@eslint/js": "^8.57.1",
     "@tailwindcss/vite": "^4.1.11",
+    "@types/jest": "^30.0.0",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react-swc": "^3.10.2",
     "autoprefixer": "^10.4.21",
+    "babel-jest": "^30.0.2",
     "eslint": "^8.57.1",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-prettier": "^10.1.5",
@@ -37,6 +43,7 @@
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "globals": "^16.2.0",
     "husky": "^9.1.7",
+    "jest": "^30.0.3",
     "lint-staged": "^16.1.2",
     "postcss": "^8.5.6",
     "prettier": "^3.6.2",
