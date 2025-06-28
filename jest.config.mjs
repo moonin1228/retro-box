@@ -4,7 +4,7 @@ const config = {
   testEnvironment: "node",
   transform: { "^.+\\.js$": "babel-jest" },
   moduleNameMapper: { "^@/(.*)$": "<rootDir>/src/$1" },
-  testMatch: ["**/src/tests/**/*.test.js"],
+  testMatch: ["**/tests/**/*.test.js"],
 };
 
 export default config;
