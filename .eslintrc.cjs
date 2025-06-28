@@ -37,6 +37,7 @@ module.exports = {
         js: "always",
       },
     ],
+    "no-param-reassign": "off",
   },
   overrides: [
     {
