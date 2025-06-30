@@ -3,9 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Retro Game Boy Emulator</title>
   </head>
   <body>
     <div id="root"></div>
+
+    <div
+      style="
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: #f0f0f0;
+        padding: 10px;
+        border-radius: 5px;
+        font-family: monospace;
+        z-index: 9999;
+      "
+    >
+      <button id="progress-btn">구현 진행률 확인</button>
+      <div id="progress-info" style="margin-top: 10px; font-size: 12px"></div>
+    </div>
+
     <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="/src/debug.js"></script>
   </body>
 </html>
