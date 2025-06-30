@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "imports": {
+    "@/": "./src/"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -11,8 +14,7 @@
     "preview": "vite preview",
     "format": "prettier --write .",
     "prepare": "husky install",
-    "test": "jest",
-    "test:mem": "jest src/tests/memory.test.js"
+    "test": "jest"
   },
   "dependencies": {
     "react": "^19.1.0",

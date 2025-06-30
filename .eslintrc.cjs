@@ -30,6 +30,9 @@ module.exports = {
     "no-bitwise": "off",
     "import/order": "off",
     "sort-imports": "off",
+    "no-plusplus": "off",
+    "no-unused-expressions": "off",
+    "import/prefer-default-export": "off",
     "import/extensions": [
       "error",
       "ignorePackages",
