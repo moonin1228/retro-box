@@ -1,6 +1,6 @@
 import { getOpcodeProgress } from "@/emulator/cpu/opcodes.js";
 
-async function checkProgress() {
+const checkProgress = async () => {
   try {
     const progress = getOpcodeProgress();
 
@@ -24,7 +24,7 @@ async function checkProgress() {
     }
     return null;
   }
-}
+};
 
 document.addEventListener("DOMContentLoaded", () => {
   const button = document.getElementById("progress-btn");

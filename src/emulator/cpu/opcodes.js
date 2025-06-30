@@ -83,16 +83,16 @@ opcodeTable[0x87] = (cpu) => InstructionList.ADD_A_r(cpu, "A");
 
 opcodeTable[0x18] = (cpu) => InstructionList.JR_n(cpu);
 
-export function executeOpcode(cpu, opcode) {
+export const executeOpcode = (cpu, opcode) => {
   const handler = opcodeTable[opcode];
   if (handler) {
     handler(cpu);
   } else {
     throw new Error(`Unimplemented opcode: 0x${opcode.toString(16).padStart(2, "0")}`);
   }
-}
+};
 
-export function getOpcodesList() {
+export const getOpcodesList = () => {
   const implemented = [];
   for (let i = 0; i < 256; i++) {
     if (opcodeTable[i] !== null) {
@@ -100,9 +100,9 @@ export function getOpcodesList() {
     }
   }
   return implemented;
-}
+};
 
-export function getOpcodeProgress() {
+export const getOpcodeProgress = () => {
   const implemented = getOpcodesList();
   return {
     implemented: implemented.length,
@@ -110,4 +110,4 @@ export function getOpcodeProgress() {
     percentage: Math.round((implemented.length / 256) * 100),
     opcodes: implemented,
   };
-}
+};

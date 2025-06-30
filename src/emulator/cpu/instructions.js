@@ -17,13 +17,13 @@ import {
 } from "@/emulator/cpu/cpu.js";
 
 export const InstructionList = {
-  LD_r_n(cpu, reg) {
+  LD_r_n: (cpu, reg) => {
     const value = fetchByte(cpu);
     write8Reg(cpu, reg, value);
     addCycles(cpu, 8);
   },
 
-  INC_r(cpu, reg) {
+  INC_r: (cpu, reg) => {
     const value = read8Reg(cpu, reg);
     const result = (value + 1) & 0xff;
 
@@ -36,7 +36,7 @@ export const InstructionList = {
     addCycles(cpu, 4);
   },
 
-  DEC_r(cpu, reg) {
+  DEC_r: (cpu, reg) => {
     const value = read8Reg(cpu, reg);
     const result = (value - 1) & 0xff;
 
@@ -49,7 +49,7 @@ export const InstructionList = {
     addCycles(cpu, 4);
   },
 
-  SUB_A_r(cpu, reg) {
+  SUB_A_r: (cpu, reg) => {
     const a = read8Reg(cpu, "A");
     const value = read8Reg(cpu, reg);
     const result = (a - value) & 0xff;
@@ -64,7 +64,7 @@ export const InstructionList = {
     addCycles(cpu, 4);
   },
 
-  SUB_A_n(cpu) {
+  SUB_A_n: (cpu) => {
     const a = read8Reg(cpu, "A");
     const value = fetchByte(cpu);
     const result = (a - value) & 0xff;
@@ -79,7 +79,7 @@ export const InstructionList = {
     addCycles(cpu, 8);
   },
 
-  SUB_A_HL(cpu) {
+  SUB_A_HL: (cpu) => {
     const a = read8Reg(cpu, "A");
     const address = read16Reg(cpu, "HL");
     const value = readMemory(cpu, address);
@@ -95,13 +95,13 @@ export const InstructionList = {
     addCycles(cpu, 8);
   },
 
-  JP_nn(cpu) {
+  JP_nn: (cpu) => {
     const address = fetchWord(cpu);
     write16Reg(cpu, "PC", address);
     addCycles(cpu, 16);
   },
 
-  JP_cc_nn(cpu, condition) {
+  JP_cc_nn: (cpu, condition) => {
     const address = fetchWord(cpu);
     if (testCondition(cpu, condition)) {
       write16Reg(cpu, "PC", address);
@@ -111,14 +111,14 @@ export const InstructionList = {
     }
   },
 
-  CALL_nn(cpu) {
+  CALL_nn: (cpu) => {
     const address = fetchWord(cpu);
     pushWord(cpu, read16Reg(cpu, "PC"));
     write16Reg(cpu, "PC", address);
     addCycles(cpu, 24);
   },
 
-  CALL_cc_nn(cpu, condition) {
+  CALL_cc_nn: (cpu, condition) => {
     const address = fetchWord(cpu);
     if (testCondition(cpu, condition)) {
       pushWord(cpu, read16Reg(cpu, "PC"));
@@ -129,13 +129,13 @@ export const InstructionList = {
     }
   },
 
-  RET(cpu) {
+  RET: (cpu) => {
     const address = popWord(cpu);
     write16Reg(cpu, "PC", address);
     addCycles(cpu, 16);
   },
 
-  RET_cc(cpu, condition) {
+  RET_cc: (cpu, condition) => {
     if (testCondition(cpu, condition)) {
       const address = popWord(cpu);
       write16Reg(cpu, "PC", address);
@@ -145,32 +145,32 @@ export const InstructionList = {
     }
   },
 
-  RST_n(cpu, address) {
+  RST_n: (cpu, address) => {
     pushWord(cpu, read16Reg(cpu, "PC"));
     write16Reg(cpu, "PC", address);
     addCycles(cpu, 16);
   },
 
-  NOP(cpu) {
+  NOP: (cpu) => {
     addCycles(cpu, 4);
   },
 
-  HALT(cpu) {
+  HALT: (cpu) => {
     halt(cpu);
     addCycles(cpu, 4);
   },
 
-  DI(cpu) {
+  DI: (cpu) => {
     disableInterrupts(cpu);
     addCycles(cpu, 4);
   },
 
-  EI(cpu) {
+  EI: (cpu) => {
     enableInterrupts(cpu);
     addCycles(cpu, 4);
   },
 
-  ADD_A_r(cpu, reg) {
+  ADD_A_r: (cpu, reg) => {
     const a = read8Reg(cpu, "A");
     const value = read8Reg(cpu, reg);
     const result = a + value;
@@ -185,7 +185,7 @@ export const InstructionList = {
     addCycles(cpu, 4);
   },
 
-  JR_n(cpu) {
+  JR_n: (cpu) => {
     const offset = fetchByte(cpu);
     const signedOffset = offset > 127 ? offset - 256 : offset;
     const currentPC = read16Reg(cpu, "PC");
