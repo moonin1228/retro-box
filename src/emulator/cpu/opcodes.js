@@ -87,9 +87,9 @@ export const executeOpcode = (cpu, opcode) => {
   const handler = opcodeTable[opcode];
   if (handler) {
     handler(cpu);
-  } else {
-    throw new Error(`Unimplemented opcode: 0x${opcode.toString(16).padStart(2, "0")}`);
+    return cpu.cycles;
   }
+  throw new Error(`Unimplemented opcode: 0x${opcode.toString(16).padStart(2, "0")}`);
 };
 
 export const getOpcodesList = () => {
