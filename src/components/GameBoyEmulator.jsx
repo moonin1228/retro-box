@@ -1,17 +1,32 @@
 import { useEffect, useRef } from "react";
 
 import createGameBoy from "@/emulator/gameBoy.js";
+import useGameInput from "@/hooks/useGameInput.jsx";
+import useGameInputStore from "@/stores/useGameInputStore.js";
 
 function GameBoyEmulator() {
   const canvasRef = useRef(null);
   const gameBoyRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  useGameInput();
+
   useEffect(() => {
     if (canvasRef.current) {
       gameBoyRef.current = createGameBoy(canvasRef.current, {
-        zoom: 5,
+        zoom: 1,
       });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (gameBoyRef.current?.cpu) {
+      gameBoyRef.current.cpu.input = {
+        getInputMask: () => {
+          const currentMask = useGameInputStore.getState().inputMask;
+          return currentMask;
+        },
+      };
     }
   }, []);
 
@@ -60,7 +75,7 @@ function GameBoyEmulator() {
           type="file"
           accept=".gb,.gbc"
           onChange={handleFileUpload}
-          className="mb-3 rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50 focus:border-transparent focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          className="mb-3 rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50 focus:border-transparent focus:ring-2 focus:outline-none"
         />
         <div className="space-x-2">
           <button
@@ -83,10 +98,9 @@ function GameBoyEmulator() {
       <div className="flex justify-center">
         <canvas
           ref={canvasRef}
-          className="border-2 border-gray-800 bg-[#B3B3B3]"
-          style={{
-            imageRendering: "pixelated",
-          }}
+          tabIndex={0}
+          className="border-2 border-gray-800 bg-[#B3B3B3] focus:ring-2 focus:outline-none"
+          style={{ imageRendering: "pixelated" }}
         />
       </div>
 
