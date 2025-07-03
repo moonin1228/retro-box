@@ -11,7 +11,7 @@ export const physics = {
   FREQUENCY: 60,
 };
 
-export default function createScreen(canvas, pixelSize = 1) {
+const createScreen = (canvas, pixelSize = 1) => {
   const ctx = canvas.getContext("2d");
   const state = { pixelSize, imageData: null };
 
@@ -70,4 +70,6 @@ export default function createScreen(canvas, pixelSize = 1) {
     clearScreen,
     render,
   });
-}
+};
+
+export default createScreen;

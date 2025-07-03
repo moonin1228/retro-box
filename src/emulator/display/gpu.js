@@ -26,7 +26,7 @@ const TILEMAP = Object.freeze({
   LENGTH: 0x0400,
 });
 
-export function createGPU(screen, cpu) {
+export const createGPU = (screen, cpu) => {
   const vram = cpu.memory.vram.bind(cpu.memory);
   const dev = cpu.memory.deviceram.bind(cpu.memory);
   const oam = cpu.memory.oamram.bind(cpu.memory);
@@ -274,6 +274,6 @@ export function createGPU(screen, cpu) {
   };
 
   return Object.freeze({ update, drawPixel, getPixel, getPalette });
-}
+};
 
 export default createGPU;

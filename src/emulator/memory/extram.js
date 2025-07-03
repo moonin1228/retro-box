@@ -1,4 +1,4 @@
-export default function createExtRam() {
+const createExtRam = () => {
   const state = {
     gameName: "",
     extRam: [],
@@ -46,4 +46,6 @@ export default function createExtRam() {
   };
 
   return Object.freeze({ loadRam, setRamBank, write, read, save });
-}
+};
+
+export default createExtRam;
