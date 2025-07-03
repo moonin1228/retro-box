@@ -5,14 +5,13 @@ import { physics } from "@/emulator/display/screen.js";
 import createMemory from "@/emulator/memory/memory.js";
 import Util from "@/emulator/util/util.js";
 
-const createCPU = (gameboy, { useBootRom = false } = {}) => {
+const createCPU = (gameboy) => {
   const r = { A: 0, F: 0, B: 0, C: 0, D: 0, E: 0, H: 0, L: 0, pc: 0, sp: 0 };
   const clock = { c: 0, serial: 0 };
 
   let IME = false;
   let isHalted = false;
   let isPaused = false;
-  const usingBootRom = useBootRom;
 
   let nextFrameTimer = null;
 
@@ -64,8 +63,7 @@ const createCPU = (gameboy, { useBootRom = false } = {}) => {
   };
 
   const run = () => {
-    r.pc = usingBootRom ? 0x0000 : 0x0100;
-    console.log("CPU 시작 - PC:", r.pc.toString(16));
+    r.pc = 0x0100;
     frame();
   };
   const stop = () => clearTimeout(nextFrameTimer);
@@ -87,7 +85,6 @@ const createCPU = (gameboy, { useBootRom = false } = {}) => {
         const elapsed = clock.c - old;
         vblank = instance.gpu ? instance.gpu.update(elapsed) : false;
         timer.update(elapsed);
-        instance.input?.update?.();
         checkInterrupt();
       }
       clock.c = 0;
