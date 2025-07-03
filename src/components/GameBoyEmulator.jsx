@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 
 import createGameBoy from "@/emulator/gameBoy.js";
 
-export default function GameBoyEmulator() {
+function GameBoyEmulator() {
   const canvasRef = useRef(null);
   const gameBoyRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -83,7 +83,7 @@ export default function GameBoyEmulator() {
       <div className="flex justify-center">
         <canvas
           ref={canvasRef}
-          className="border-2 border-gray-800 bg-[#9BBB0F]"
+          className="border-2 border-gray-800 bg-[#B3B3B3]"
           style={{
             imageRendering: "pixelated",
           }}
@@ -98,3 +98,5 @@ export default function GameBoyEmulator() {
     </div>
   );
 }
+
+export default GameBoyEmulator;

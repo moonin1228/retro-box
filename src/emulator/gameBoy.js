@@ -2,8 +2,6 @@ import createCPU from "@/emulator/cpu/cpu.js";
 import GPU from "@/emulator/display/gpu.js";
 import Screen from "@/emulator/display/screen.js";
 import UnimplementedException from "@/emulator/exception.js";
-import RomAjaxReader from "@/emulator/rom/ajax_reader.js";
-import RomDropFileReader from "@/emulator/rom/drop_file_reader.js";
 import RomFileReader from "@/emulator/rom/file_reader.js";
 import createRom from "@/emulator/rom/rom.js";
 import { merge } from "@/emulator/util/util.js";
@@ -16,7 +14,7 @@ const defaultOptions = Object.freeze({
   errorContainerId: "error",
 });
 
-export const createGameBoy = (canvas, options = {}) => {
+const createGameBoy = (canvas, options = {}) => {
   const opts = merge({}, defaultOptions, options);
 
   const api = {};
@@ -45,7 +43,7 @@ export const createGameBoy = (canvas, options = {}) => {
     cpu.stop();
   };
 
-  function startRom(romObj) {
+  const startRom = (romObj) => {
     errorContainer.classList.add("hide");
     cpu.reset();
 
@@ -58,9 +56,9 @@ export const createGameBoy = (canvas, options = {}) => {
     } catch (e) {
       handleException(e);
     }
-  }
+  };
 
-  function loadRomData(romData) {
+  const loadRomData = (romData) => {
     errorContainer.classList.add("hide");
     cpu.reset();
 
@@ -73,7 +71,7 @@ export const createGameBoy = (canvas, options = {}) => {
     } catch (e) {
       handleException(e);
     }
-  }
+  };
 
   const rom = createRom({ startRom, error });
   (opts.romReaders.length ? opts.romReaders : [RomFileReader()]).forEach((r) => rom.addReader(r));
@@ -117,5 +115,4 @@ export const createGameBoy = (canvas, options = {}) => {
   });
 };
 
-export { RomAjaxReader, RomDropFileReader, RomFileReader, merge as Util };
 export default createGameBoy;
