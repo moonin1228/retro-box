@@ -72,6 +72,25 @@ export const createMemory = (cpu) => {
   };
 
   const rb = (addr) => {
+    if (addr === 0xff00) {
+      const selector = mem[addr] & 0x30;
+      let inputBits = 0x0f;
+
+      if (cpu.input && cpu.input.getInputMask) {
+        const inputMask = cpu.input.getInputMask();
+
+        if (selector === 0x20) {
+          inputBits = ~inputMask & 0x0f;
+        } else if (selector === 0x10) {
+          inputBits = ~(inputMask >> 4) & 0x0f;
+        }
+      }
+
+      const result = selector | inputBits;
+
+      return result;
+    }
+
     if (addr >= 0xff10 && addr < 0xff40) {
       return mem[addr] | apuMask[addr - 0xff10];
     }
