@@ -163,10 +163,10 @@ const ops = {
     p.clock.c += 8;
   },
   _ADDrn(p, r1, n) {
-    const h = ((p.r[r1] & 0xf) + (n & 0xf)) & 0x10;
-    p.wr(r1, p.r[r1] + n);
-    const c = p.r[r1] & 0x100;
-    p.r[r1] &= 0xff;
+    const h = (p.r[r1] & 0xf) + (n & 0xf) > 0xf;
+    const result = p.r[r1] + n;
+    const c = result > 0xff;
+    p.wr(r1, result & 0xff);
     let f = 0;
     if (p.r[r1] === 0) f |= 0x80;
     if (h) f |= 0x20;
@@ -221,16 +221,16 @@ const ops = {
     p.clock.c += 8;
   },
   _ADCrn(p, r1, n) {
-    let c = p.r.F & 0x10 ? 1 : 0;
-    const h = ((p.r[r1] & 0xf) + (n & 0xf) + c) & 0x10;
-    p.wr(r1, p.r[r1] + n + c);
-    c = p.r[r1] & 0x100;
-    p.r[r1] &= 0xff;
+    const prevCarry = p.r.F & 0x10 ? 1 : 0;
+    const result = p.r[r1] + n + prevCarry;
+    const h = (p.r[r1] & 0xf) + (n & 0xf) + prevCarry > 0xf;
+    const c = result > 0xff;
+    p.wr(r1, result & 0xff);
     let f = 0;
-    if (p.r[r1] === 0) f |= 0x80;
+    if ((result & 0xff) === 0) f |= 0x80;
     if (h) f |= 0x20;
     if (c) f |= 0x10;
-    p.r.F = f;
+    p.wr("F", f);
   },
   ADCrrra(p, r1, r2, r3) {
     const n = p.memory.rb(Util.getRegAddr(p, r2, r3));
@@ -239,12 +239,12 @@ const ops = {
   },
   ADDrrra(p, r1, r2, r3) {
     const v = p.memory.rb(Util.getRegAddr(p, r2, r3));
-    const h = ((p.r[r1] & 0xf) + (v & 0xf)) & 0x10;
-    p.wr(r1, p.r[r1] + v);
-    const c = p.r[r1] & 0x100;
-    p.r[r1] &= 0xff;
+    const result = p.r[r1] + v;
+    const h = (p.r[r1] & 0xf) + (v & 0xf) > 0xf;
+    const c = result > 0xff;
+    p.wr(r1, result & 0xff);
     let f = 0;
-    if (p.r[r1] === 0) f |= 0x80;
+    if ((result & 0xff) === 0) f |= 0x80;
     if (h) f |= 0x20;
     if (c) f |= 0x10;
     p.wr("F", f);
@@ -266,13 +266,12 @@ const ops = {
     p.clock.c += 8;
   },
   _SUBn(p, n) {
-    const c = p.r.A < n;
+    const result = p.r.A - n;
     const h = (p.r.A & 0xf) < (n & 0xf);
-    p.wr("A", p.r.A - n);
-    p.r.A &= 0xff;
-    const z = p.r.A === 0;
-    let f = 0x40;
-    if (z) f |= 0x80;
+    const c = result < 0;
+    p.wr("A", result & 0xff);
+    let f = 0x40; // N flag is always set
+    if ((result & 0xff) === 0) f |= 0x80;
     if (h) f |= 0x20;
     if (c) f |= 0x10;
     p.wr("F", f);
@@ -288,22 +287,21 @@ const ops = {
     p.clock.c += 4;
   },
   SBCrra(p, r1, r2) {
-    const v = p.memory.rb((p.r[r1] << 8) + p.r[r2]);
-    ops._SBCn(p, v);
+    const n = p.memory.rb(Util.getRegAddr(p, r1, r2));
+    ops._SBCn(p, n);
     p.clock.c += 8;
   },
   _SBCn(p, n) {
-    const carry = p.r.F & 0x10 ? 1 : 0;
-    const c = p.r.A < n + carry;
-    const h = (p.r.A & 0xf) < (n & 0xf) + carry;
-    p.wr("A", p.r.A - n - carry);
-    p.r.A &= 0xff;
-    const z = p.r.A === 0;
-    let f = 0x40;
-    if (z) f |= 0x80;
+    const prevCarry = p.r.F & 0x10 ? 1 : 0;
+    const result = p.r.A - n - prevCarry;
+    const h = (p.r.A & 0xf) < (n & 0xf) + prevCarry;
+    const c = result < 0;
+    p.wr("A", result & 0xff);
+    let f = 0x40; // N flag is always set
+    if ((result & 0xff) === 0) f |= 0x80;
     if (h) f |= 0x20;
     if (c) f |= 0x10;
-    p.r.F = f;
+    p.wr("F", f);
   },
   ORr(p, r1) {
     p.r.A |= p.r[r1];
@@ -316,7 +314,7 @@ const ops = {
     p.clock.c += 8;
   },
   ORrra(p, r1, r2) {
-    p.r.A |= p.memory.rb((p.r[r1] << 8) + p.r[r2]);
+    p.r.A |= p.memory.rb(Util.getRegAddr(p, r1, r2));
     p.r.F = p.r.A === 0 ? 0x80 : 0x00;
     p.clock.c += 8;
   },
@@ -346,7 +344,7 @@ const ops = {
     p.clock.c += 8;
   },
   XORrra(p, r1, r2) {
-    p.r.A ^= p.memory.rb((p.r[r1] << 8) + p.r[r2]);
+    p.r.A ^= p.memory.rb(Util.getRegAddr(p, r1, r2));
     p.r.F = p.r.A === 0 ? 0x80 : 0x00;
     p.clock.c += 8;
   },
