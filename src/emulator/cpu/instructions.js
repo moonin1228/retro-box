@@ -690,12 +690,12 @@ const ops = {
     p.clock.c += 4;
   },
   EI(p) {
-    p.enableInterrupts();
+    p.scheduleInterruptEnable(); // 즉시 활성화가 아닌 다음 명령어 이후 활성화로 변경
     p.clock.c += 4;
   },
   RETI(p) {
-    p.enableInterrupts();
-    ops.RET(p);
+    ops.RET(p); // 먼저 리턴을 실행하고
+    p.enableInterrupts(); // 그 다음에 IME 활성화
   },
   CB(p) {
     const opcode = p.memory.rb(p.r.pc++);
