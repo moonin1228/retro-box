@@ -86,13 +86,17 @@ export const createMemory = (cpu) => {
         }
       }
 
-      const result = selector | inputBits;
-
-      return result;
+      return selector | inputBits;
     }
 
-    if (addr >= 0xff10 && addr < 0xff40) {
-      return mem[addr] | apuMask[addr - 0xff10];
+    if (addr >= 0xff10 && addr <= 0xff3f) {
+      if (cpu.apu) {
+        const value = cpu.apu.readRegister(addr);
+        if (value !== undefined) {
+          return value | (apuMask[addr - 0xff10] || 0xff);
+        }
+      }
+      return mem[addr] | (apuMask[addr - 0xff10] || 0xff);
     }
 
     if (addr >= 0xa000 && addr < 0xc000) {
@@ -108,7 +112,14 @@ export const createMemory = (cpu) => {
     }
 
     if (addr >= 0xff10 && addr <= 0xff3f) {
-      if (cpu.apu) cpu.apu.manageWrite(addr, value);
+      mem[addr] = value;
+      if (cpu.apu) {
+        try {
+          cpu.apu.writeRegister(addr, value);
+        } catch (error) {
+          console.error(`Error writing to APU register ${addr.toString(16)}:`, error);
+        }
+      }
       return;
     }
 
