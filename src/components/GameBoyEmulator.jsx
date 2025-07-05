@@ -14,7 +14,7 @@ function GameBoyEmulator() {
   useEffect(() => {
     if (canvasRef.current) {
       gameBoyRef.current = createGameBoy(canvasRef.current, {
-        zoom: 1,
+        zoom: 5,
       });
     }
   }, []);
