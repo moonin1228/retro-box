@@ -1,9 +1,17 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function MainPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+
+  const beepRef = useRef(null);
+
+  if (!beepRef.current) {
+    beepRef.current = new Audio("/sounds/coin.mp3");
+    beepRef.current.preload = "auto";
+    beepRef.current.volume = 0.3;
+  }
 
   const navigate = useNavigate();
 
@@ -14,6 +22,9 @@ function MainPage() {
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
+          const audio = beepRef.current;
+          audio.currentTime = 0;
+          audio.play();
           clearInterval(interval);
           setTimeout(() => navigate("/game"), 500);
           return 100;
