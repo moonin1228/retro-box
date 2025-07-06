@@ -1,13 +1,16 @@
 import { useEffect, useRef } from "react";
+import { FaPause, FaPlay } from "react-icons/fa";
 
 import createGameBoy from "@/emulator/gameBoy.js";
 import useGameInput from "@/hooks/useGameInput.jsx";
 import useGameInputStore from "@/stores/useGameInputStore.js";
+import useGameStatus from "@/stores/useGameStatus.js";
 
 function GameBoyEmulator() {
   const canvasRef = useRef(null);
   const gameBoyRef = useRef(null);
   const fileInputRef = useRef(null);
+  const { isGamePause, togglePause } = useGameStatus();
 
   useGameInput();
 
@@ -73,48 +76,23 @@ function GameBoyEmulator() {
     reader.readAsArrayBuffer(file);
   };
 
-  const handlePause = () => {
+  const handleTogglePause = () => {
     if (gameBoyRef.current) {
-      gameBoyRef.current.pause(true);
-    }
-  };
-
-  const handleResume = () => {
-    if (gameBoyRef.current) {
-      gameBoyRef.current.pause(false);
+      gameBoyRef.current.pause(!isGamePause);
+      togglePause();
     }
   };
 
   return (
-    <div className="p-5 text-center">
-      <h1 className="mb-6 text-3xl font-bold text-gray-800">🎮 게임보이 에뮬레이터</h1>
-
-      <div className="mb-5">
-        <input
-          id="file"
-          ref={fileInputRef}
-          type="file"
-          accept=".gb,.gbc"
-          onChange={handleFileUpload}
-          className="mb-3 rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50 focus:border-transparent focus:ring-2 focus:outline-none"
-        />
-        <div className="space-x-2">
-          <button
-            onClick={handlePause}
-            type="button"
-            className="rounded-lg bg-red-500 px-4 py-2 text-white transition-colors hover:bg-red-600 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:outline-none"
-          >
-            일시정지
-          </button>
-          <button
-            onClick={handleResume}
-            type="button"
-            className="rounded-lg bg-green-500 px-4 py-2 text-white transition-colors hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none"
-          >
-            재시작
-          </button>
-        </div>
-      </div>
+    <div className="flex flex-col items-center gap-5">
+      <input
+        id="file"
+        ref={fileInputRef}
+        type="file"
+        accept=".gb,.gbc"
+        onChange={handleFileUpload}
+        className="mb-3 rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50 focus:border-transparent focus:ring-2 focus:outline-none"
+      />
 
       <div className="flex justify-center">
         <canvas
@@ -125,11 +103,18 @@ function GameBoyEmulator() {
         />
       </div>
 
-      <div id="status" className="mt-3 font-bold text-gray-700">
-        ROM 파일을 업로드하세요
-      </div>
       <div id="game-name" className="mt-1 text-sm text-gray-600" />
-      <div id="error" className="hide mt-3 text-red-600" />
+      <div id="error" className="hide mt-1 text-red-600" />
+
+      <div className="-mt-1 flex gap-5">
+        <button
+          onClick={handleTogglePause}
+          type="button"
+          className="flex h-10 w-10 items-center justify-center rounded-md bg-[#dcd3cc] text-[#534d48] shadow-[inset_-2px_-2px_0px_#8b8781,inset_2px_2px_0px_#f3ede8] transition-all duration-200 hover:brightness-105 active:shadow-[inset_2px_2px_0px_#8b8781,inset_-2px_-2px_0px_#f3ede8]"
+        >
+          {isGamePause ? <FaPlay className="text-xl" /> : <FaPause className="text-xl" />}
+        </button>
+      </div>
     </div>
   );
 }

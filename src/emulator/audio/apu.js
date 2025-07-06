@@ -130,7 +130,7 @@ const createApu = () => {
     }
   }
 
-  const reset = () => {
+  function reset() {
     try {
       if (!state.initialized && !init()) return;
 
@@ -160,7 +160,7 @@ const createApu = () => {
       console.error("[APU] Error resetting audio system:", error);
       state.initialized = false;
     }
-  };
+  }
 
   const updateMasterVolume = () => {
     if (!state.initialized) return;
