@@ -19,15 +19,15 @@ const APU_CONSTANTS = {
   },
 };
 
-const handleChannelRegister = (channels, addr, value) => {
-  if (addr >= 0xff10 && addr <= 0xff14 && channels.channel1) {
-    channels.channel1.writeRegister(addr, value);
-  } else if (addr >= 0xff15 && addr <= 0xff19 && channels.channel2) {
-    channels.channel2.writeRegister(addr, value);
-  } else if (addr >= 0xff1a && addr <= 0xff1e && channels.channel3) {
-    channels.channel3.writeRegister(addr, value);
-  } else if (addr >= 0xff1f && addr <= 0xff23 && channels.channel4) {
-    channels.channel4.writeRegister(addr, value);
+const handleChannelRegister = (channels, address, value) => {
+  if (address >= 0xff10 && address <= 0xff14 && channels.channel1) {
+    channels.channel1.writeRegister(address, value);
+  } else if (address >= 0xff15 && address <= 0xff19 && channels.channel2) {
+    channels.channel2.writeRegister(address, value);
+  } else if (address >= 0xff1a && address <= 0xff1e && channels.channel3) {
+    channels.channel3.writeRegister(address, value);
+  } else if (address >= 0xff1f && address <= 0xff23 && channels.channel4) {
+    channels.channel4.writeRegister(address, value);
   }
 };
 
@@ -64,11 +64,11 @@ const handleNR52Write = (state, value, registers, channels) => {
   }
 };
 
-const readChannelRegister = (channels, addr) => {
-  if (addr >= 0xff10 && addr <= 0xff14) return channels.channel1.readRegister(addr);
-  if (addr >= 0xff15 && addr <= 0xff19) return channels.channel2.readRegister(addr);
-  if (addr >= 0xff1a && addr <= 0xff1e) return channels.channel3.readRegister(addr);
-  if (addr >= 0xff1f && addr <= 0xff23) return channels.channel4.readRegister(addr);
+const readChannelRegister = (channels, address) => {
+  if (address >= 0xff10 && address <= 0xff14) return channels.channel1.readRegister(address);
+  if (address >= 0xff15 && address <= 0xff19) return channels.channel2.readRegister(address);
+  if (address >= 0xff1a && address <= 0xff1e) return channels.channel3.readRegister(address);
+  if (address >= 0xff1f && address <= 0xff23) return channels.channel4.readRegister(address);
   return 0xff;
 };
 
@@ -90,14 +90,14 @@ const createApu = () => {
     NR52: APU_CONSTANTS.INITIAL_NR52,
   };
 
-  function createAudioContext() {
+  const createAudioContext = () => {
     try {
       return new (window.AudioContext || window.webkitAudioContext)();
     } catch (error) {
       console.error("[APU] Failed to create AudioContext:", error);
       return null;
     }
-  }
+  };
 
   function init() {
     try {
@@ -130,7 +130,7 @@ const createApu = () => {
     }
   }
 
-  function reset() {
+  const reset = () => {
     try {
       if (!state.initialized && !init()) return;
 
@@ -160,9 +160,9 @@ const createApu = () => {
       console.error("[APU] Error resetting audio system:", error);
       state.initialized = false;
     }
-  }
+  };
 
-  function updateMasterVolume() {
+  const updateMasterVolume = () => {
     if (!state.initialized) return;
 
     const leftVol = ((registers.NR50 >> 4) & 0x7) / 7;
@@ -172,9 +172,9 @@ const createApu = () => {
     Object.values(state.channels).forEach((channel) => {
       channel.setMasterVolume?.(masterVol);
     });
-  }
+  };
 
-  function updatePanning() {
+  const updatePanning = () => {
     try {
       if (!state.initialized) return;
 
@@ -194,19 +194,19 @@ const createApu = () => {
     } catch (error) {
       console.error("[APU] Error updating panning:", error);
     }
-  }
+  };
 
-  function writeRegister(addr, value) {
-    if (!state.initialized && addr !== APU_CONSTANTS.REGISTERS.NR52) {
+  const writeRegister = (address, value) => {
+    if (!state.initialized && address !== APU_CONSTANTS.REGISTERS.NR52) {
       if (!init()) return;
     }
 
     try {
-      if (!(registers.NR52 & 0x80) && addr !== APU_CONSTANTS.REGISTERS.NR52) {
+      if (!(registers.NR52 & 0x80) && address !== APU_CONSTANTS.REGISTERS.NR52) {
         return;
       }
 
-      switch (addr) {
+      switch (address) {
         case APU_CONSTANTS.REGISTERS.NR50:
           registers.NR50 = value;
           updateMasterVolume();
@@ -223,33 +223,36 @@ const createApu = () => {
 
         default:
           try {
-            handleChannelRegister(state.channels, addr, value);
+            handleChannelRegister(state.channels, address, value);
           } catch (error) {
-            console.error(`[APU] Error writing to channel register ${addr.toString(16)}:`, error);
+            console.error(
+              `[APU] Error writing to channel register ${address.toString(16)}:`,
+              error,
+            );
           }
       }
     } catch (error) {
-      console.error(`[APU] Error writing to register ${addr.toString(16)}:`, error);
+      console.error(`[APU] Error writing to register ${address.toString(16)}:`, error);
     }
-  }
+  };
 
-  function readRegister(addr) {
+  const readRegister = (address) => {
     try {
       if (!state.initialized) return 0xff;
 
-      if (!(registers.NR52 & 0x80) && addr !== APU_CONSTANTS.REGISTERS.NR52) {
+      if (!(registers.NR52 & 0x80) && address !== APU_CONSTANTS.REGISTERS.NR52) {
         return 0xff;
       }
 
       try {
-        const channelRegValue = readChannelRegister(state.channels, addr);
+        const channelRegValue = readChannelRegister(state.channels, address);
         if (channelRegValue !== 0xff) return channelRegValue;
       } catch (error) {
-        console.error(`[APU] Error reading from channel register ${addr.toString(16)}:`, error);
+        console.error(`[APU] Error reading from channel register ${address.toString(16)}:`, error);
         return 0xff;
       }
 
-      switch (addr) {
+      switch (address) {
         case APU_CONSTANTS.REGISTERS.NR50:
           return registers.NR50;
         case APU_CONSTANTS.REGISTERS.NR51:
@@ -260,12 +263,12 @@ const createApu = () => {
           return 0xff;
       }
     } catch (error) {
-      console.error(`[APU] Error reading register ${addr.toString(16)}:`, error);
+      console.error(`[APU] Error reading register ${address.toString(16)}:`, error);
       return 0xff;
     }
-  }
+  };
 
-  function step(cycles) {
+  const step = (cycles) => {
     if (!state.initialized || !(registers.NR52 & 0x80)) return;
 
     try {
@@ -292,9 +295,9 @@ const createApu = () => {
     } catch (error) {
       console.error("[APU] Error in step:", error);
     }
-  }
+  };
 
-  function connect() {
+  const connect = () => {
     try {
       if (!state.initialized) {
         init();
@@ -308,9 +311,9 @@ const createApu = () => {
     } catch (error) {
       console.error("[APU] Error connecting audio:", error);
     }
-  }
+  };
 
-  function disconnect() {
+  const disconnect = () => {
     try {
       if (state.isConnected) {
         Object.values(state.channels).forEach((channel) => {
@@ -322,7 +325,7 @@ const createApu = () => {
     } catch (error) {
       console.error("[APU] Error disconnecting audio:", error);
     }
-  }
+  };
 
   return {
     writeRegister,
