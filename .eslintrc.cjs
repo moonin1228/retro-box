@@ -43,6 +43,8 @@ module.exports = {
     "consistent-return": "off",
     "prefer-destructuring": "off",
     "import/prefer-default-export": "off",
+    "jsx-a11y/control-has-associated-label": "off",
+    "react/prop-types": "off",
     "import/no-cycle": "off",
     "import/no-absolute-path": "off",
     "import/extensions": [

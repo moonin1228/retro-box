@@ -4,7 +4,6 @@ import {
   setPanning,
   updateEnvelope,
   updateLength,
-  updateVolume,
 } from "@/emulator/util/audioUtils.js";
 
 const CHANNEL4_CONSTANTS = {
@@ -237,6 +236,16 @@ export const createChannel4 = (audioContext) => {
     } catch (error) {
       console.error("Error in enable:", error);
     }
+  };
+
+  const updateVolume = () => {
+    if (!state.gainNode) return;
+
+    let volume = state.envelopeVolume / 15;
+
+    volume *= state.masterVolume * 0.3;
+
+    state.gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
   };
 
   const writeRegister = (addr, value) => {

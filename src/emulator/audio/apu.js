@@ -80,6 +80,7 @@ const createApu = () => {
     isConnected: false,
     frameSequencer: 0,
     frameSequencerClock: 0,
+    masterVolume: 0,
     init,
     reset,
   };
@@ -169,8 +170,11 @@ const createApu = () => {
     const rightVol = (registers.NR50 & 0x7) / 7;
     const masterVol = Math.max(leftVol, rightVol);
 
+    state.masterVolume = masterVol;
     Object.values(state.channels).forEach((channel) => {
-      channel.setMasterVolume?.(masterVol);
+      if (channel && channel.setMasterVolume) {
+        channel.setMasterVolume(masterVol);
+      }
     });
   };
 
@@ -276,6 +280,8 @@ const createApu = () => {
       while (state.frameSequencerClock >= APU_CONSTANTS.CYCLES_PER_FRAME_SEQUENCER) {
         state.frameSequencerClock -= APU_CONSTANTS.CYCLES_PER_FRAME_SEQUENCER;
 
+        updateMasterVolume();
+
         if (APU_CONSTANTS.FRAME_SEQUENCER.LENGTH_COUNTER.includes(state.frameSequencer)) {
           Object.values(state.channels).forEach((channel) => channel.updateLength?.());
         }
@@ -334,6 +340,7 @@ const createApu = () => {
     step,
     connect,
     disconnect,
+    getMasterVolume: () => state.masterVolume,
   };
 };
 

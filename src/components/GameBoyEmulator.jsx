@@ -3,6 +3,7 @@ import { FaPause, FaPlay } from "react-icons/fa";
 
 import createGameBoy from "@/emulator/gameBoy.js";
 import useGameInput from "@/hooks/useGameInput.jsx";
+import useEmulatorSettings from "@/stores/useEmulatorSettings.js";
 import useGameInputStore from "@/stores/useGameInputStore.js";
 import useGameStatus from "@/stores/useGameStatus.js";
 
@@ -11,8 +12,36 @@ function GameBoyEmulator() {
   const gameBoyRef = useRef(null);
   const fileInputRef = useRef(null);
   const { isGamePause, togglePause } = useGameStatus();
+  const { volume } = useEmulatorSettings();
+  const volumeUpdateRef = useRef(null);
 
   useGameInput();
+
+  const updateVolume = () => {
+    if (gameBoyRef.current) {
+      const gbVolume = Math.floor((volume / 100) * 7);
+      const nr50Value = (gbVolume << 4) | gbVolume;
+      if (gameBoyRef.current.cpu?.memory) {
+        gameBoyRef.current.cpu.memory.wb(0xff24, nr50Value);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (volumeUpdateRef.current) {
+      clearInterval(volumeUpdateRef.current);
+    }
+
+    updateVolume();
+
+    volumeUpdateRef.current = setInterval(updateVolume, 1000 / 60);
+
+    return () => {
+      if (volumeUpdateRef.current) {
+        clearInterval(volumeUpdateRef.current);
+      }
+    };
+  }, [volume]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -26,6 +55,9 @@ function GameBoyEmulator() {
       if (gameBoyRef.current) {
         gameBoyRef.current.resetAudio();
         gameBoyRef.current.pause(true);
+      }
+      if (volumeUpdateRef.current) {
+        clearInterval(volumeUpdateRef.current);
       }
     };
   }, []);
@@ -55,32 +87,21 @@ function GameBoyEmulator() {
   }, []);
 
   const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+    const file = event.target.files?.[0];
+    if (!file || !gameBoyRef.current) return;
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      try {
-        const romData = new Uint8Array(e.target.result);
-
-        if (gameBoyRef.current) {
-          gameBoyRef.current.loadRomData(romData);
-        }
-      } catch (error) {
-        console.error("ROM 로드 에러:", error);
-        if (gameBoyRef.current) {
-          gameBoyRef.current.setError(`ROM 파일을 로드할 수 없습니다: ${error.message}`);
-        }
-      }
+      const romData = new Uint8Array(e.target?.result);
+      gameBoyRef.current?.loadRomData(romData);
     };
     reader.readAsArrayBuffer(file);
   };
 
   const handleTogglePause = () => {
-    if (gameBoyRef.current) {
-      gameBoyRef.current.pause(!isGamePause);
-      togglePause();
-    }
+    if (!gameBoyRef.current) return;
+    togglePause();
+    gameBoyRef.current.pause(isGamePause);
   };
 
   return (

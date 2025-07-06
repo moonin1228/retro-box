@@ -8,6 +8,7 @@ export const createChannel3 = (audioContext) => {
     waveTable: new Uint8Array(32).fill(0),
     waveTablePosition: 0,
     volumeCode: 0,
+    masterVolume: 1,
 
     lengthCounter: 0,
     lengthEnabled: false,
@@ -65,8 +66,7 @@ export const createChannel3 = (audioContext) => {
     if (!state.gainNode) return;
     const volumeLevels = [0, 0.25, 0.5, 0.75];
     let volume = volumeLevels[state.volumeCode] || 0;
-
-    volume *= 0.3;
+    volume *= state.masterVolume * 0.3;
 
     state.gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
   };
@@ -198,12 +198,23 @@ export const createChannel3 = (audioContext) => {
   };
 
   return {
-    readRegister,
     writeRegister,
+    readRegister,
     readWaveTable,
     writeWaveTable,
+    step,
     enable,
     disable,
-    step,
+    connect: () => {
+      if (state.enabled) {
+        setupOscillator();
+      }
+    },
+    disconnect: () => disable(),
+    setMasterVolume: (volume) => {
+      state.masterVolume = volume;
+      updateVolume();
+    },
+    isEnabled: () => state.enabled,
   };
 };
