@@ -226,7 +226,7 @@ const createCPU = (gameboy) => {
       unhalt,
       requestInterrupt,
       enableInterrupts,
-      scheduleInterruptEnable, // 새로운 함수 추가
+      scheduleInterruptEnable,
       disableInterrupts,
       resetDivTimer,
     }),

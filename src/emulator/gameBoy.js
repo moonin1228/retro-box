@@ -1,3 +1,4 @@
+import createApu from "@/emulator/audio/apu.js";
 import createCPU from "@/emulator/cpu/cpu.js";
 import GPU from "@/emulator/display/gpu.js";
 import Screen from "@/emulator/display/screen.js";
@@ -18,10 +19,12 @@ const createGameBoy = (canvas, options = {}) => {
   const opts = merge({}, defaultOptions, options);
 
   const api = {};
-  const cpu = createCPU(api, {});
+  const apu = createApu();
+  const cpu = createCPU(api, { apu });
   const screen = Screen(canvas, opts.zoom);
   const gpu = GPU(screen, cpu);
   cpu.gpu = gpu;
+  cpu.apu = apu;
 
   const statusContainer =
     document.getElementById(opts.statusContainerId) || document.createElement("div");
@@ -43,8 +46,24 @@ const createGameBoy = (canvas, options = {}) => {
     cpu.stop();
   };
 
+  const resetAudio = () => {
+    try {
+      apu.disconnect();
+      apu.reset();
+
+      for (let addr = 0xff10; addr <= 0xff3f; addr++) {
+        cpu.memory.wb(addr, 0);
+      }
+
+      cpu.memory.wb(0xff26, 0x00);
+    } catch (error) {
+      console.error("Error resetting audio:", error);
+    }
+  };
+
   const startRom = (romObj) => {
     errorContainer.classList.add("hide");
+    resetAudio();
     cpu.reset();
 
     try {
@@ -60,6 +79,7 @@ const createGameBoy = (canvas, options = {}) => {
 
   const loadRomData = (romData) => {
     errorContainer.classList.add("hide");
+    resetAudio();
     cpu.reset();
 
     try {
@@ -80,13 +100,22 @@ const createGameBoy = (canvas, options = {}) => {
     if (flag) {
       setStatus("Game Paused :");
       cpu.pause();
+      resetAudio();
     } else {
       setStatus("Game Running :");
       cpu.unpause();
+      apu.connect();
     }
   };
 
-  const setSoundEnabled = (v) => (v ? cpu.apu.connect() : cpu.apu.disconnect());
+  const setSoundEnabled = (v) => {
+    if (v) {
+      apu.connect();
+    } else {
+      resetAudio();
+    }
+  };
+
   const setScreenZoom = (v) => screen.setPixelSize(v);
 
   const handleException = (e) => {
@@ -112,6 +141,7 @@ const createGameBoy = (canvas, options = {}) => {
     setGameName,
     handleException,
     loadRomData,
+    resetAudio,
   });
 };
 

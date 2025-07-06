@@ -12,11 +12,32 @@ function GameBoyEmulator() {
   useGameInput();
 
   useEffect(() => {
-    if (canvasRef.current) {
-      gameBoyRef.current = createGameBoy(canvasRef.current, {
-        zoom: 1,
-      });
-    }
+    if (!canvasRef.current) return;
+
+    const gameBoy = createGameBoy(canvasRef.current, {
+      zoom: 5,
+    });
+    gameBoyRef.current = gameBoy;
+
+    return () => {
+      if (gameBoyRef.current) {
+        gameBoyRef.current.resetAudio();
+        gameBoyRef.current.pause(true);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && gameBoyRef.current) {
+        gameBoyRef.current.resetAudio();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   useEffect(() => {

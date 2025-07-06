@@ -270,7 +270,7 @@ const ops = {
     const h = (p.r.A & 0xf) < (n & 0xf);
     const c = result < 0;
     p.wr("A", result & 0xff);
-    let f = 0x40; // N flag is always set
+    let f = 0x40;
     if ((result & 0xff) === 0) f |= 0x80;
     if (h) f |= 0x20;
     if (c) f |= 0x10;
@@ -297,7 +297,7 @@ const ops = {
     const h = (p.r.A & 0xf) < (n & 0xf) + prevCarry;
     const c = result < 0;
     p.wr("A", result & 0xff);
-    let f = 0x40; // N flag is always set
+    let f = 0x40;
     if ((result & 0xff) === 0) f |= 0x80;
     if (h) f |= 0x20;
     if (c) f |= 0x10;
@@ -690,12 +690,12 @@ const ops = {
     p.clock.c += 4;
   },
   EI(p) {
-    p.scheduleInterruptEnable(); // 즉시 활성화가 아닌 다음 명령어 이후 활성화로 변경
+    p.scheduleInterruptEnable();
     p.clock.c += 4;
   },
   RETI(p) {
-    ops.RET(p); // 먼저 리턴을 실행하고
-    p.enableInterrupts(); // 그 다음에 IME 활성화
+    ops.RET(p);
+    p.enableInterrupts();
   },
   CB(p) {
     const opcode = p.memory.rb(p.r.pc++);
