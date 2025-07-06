@@ -1,7 +1,8 @@
 import "@/index.css";
 
 import { createRoot } from "react-dom/client";
+import { RouterProvider } from "react-router-dom";
 
-import GameBoyEmulator from "@/components/GameBoyEmulator.jsx";
+import routes from "@/routers/routes.jsx";
 
-createRoot(document.getElementById("root")).render(<GameBoyEmulator />);
+createRoot(document.getElementById("root")).render(<RouterProvider router={routes} />);

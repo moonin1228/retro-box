@@ -44,6 +44,7 @@ module.exports = {
     "prefer-destructuring": "off",
     "import/prefer-default-export": "off",
     "import/no-cycle": "off",
+    "import/no-absolute-path": "off",
     "import/extensions": [
       "error",
       "ignorePackages",
