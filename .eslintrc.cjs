@@ -30,6 +30,7 @@ module.exports = {
     "no-bitwise": "off",
     "operator-assignment": "off",
     "no-return-assign": "off",
+    "no-unused-vars": "off",
     "no-continue": "off",
     "no-multi-assign": "off",
     "no-shadow": "off",
