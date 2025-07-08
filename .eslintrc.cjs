@@ -24,6 +24,7 @@ module.exports = {
     "no-console": process.env.NODE_ENV === "production" ? "warn" : "off",
     "import/no-unresolved": "off",
     "no-underscore-dangle": "off",
+    "no-nested-ternary": "off",
     "react/jsx-no-target-blank": ["error", { allowReferrer: true }],
     "simple-import-sort/imports": "error",
     "simple-import-sort/exports": "error",

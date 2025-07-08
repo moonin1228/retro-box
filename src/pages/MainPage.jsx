@@ -26,7 +26,7 @@ function MainPage() {
           audio.currentTime = 0;
           audio.play();
           clearInterval(interval);
-          setTimeout(() => navigate("/game"), 500);
+          setTimeout(() => navigate("/library"), 500);
           return 100;
         }
         return prev + 5;

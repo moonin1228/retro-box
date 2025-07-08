@@ -94,7 +94,16 @@ const createGameBoy = (canvas, options = {}) => {
   };
 
   const rom = createRom({ startRom, error });
-  (opts.romReaders.length ? opts.romReaders : [RomFileReader()]).forEach((r) => rom.addReader(r));
+
+  const readers = opts.romReaders.length ? opts.romReaders : [];
+  if (readers.length === 0) {
+    const fileInput = document.getElementById("file");
+    if (fileInput) {
+      readers.push(RomFileReader());
+    }
+  }
+
+  readers.forEach((r) => rom.addReader(r));
 
   const pause = (flag) => {
     if (flag) {
