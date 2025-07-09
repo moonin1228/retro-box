@@ -7,24 +7,22 @@ const getSignedValue = getSigned;
 
 const readBit = (byte, index) => (byte >> index) & 1;
 
-const testFlag = (cpu, cc) => {
-  const z = readBit(cpu.r.F, 7);
-  const c = readBit(cpu.r.F, 4);
+const testFlag = (p, cc) => {
   switch (cc) {
     case "NZ":
-      return !z;
+      return !(p.register.F & 0x80);
     case "Z":
-      return z;
+      return p.register.F & 0x80;
     case "NC":
-      return !c;
+      return !(p.register.F & 0x10);
     case "C":
-      return c;
+      return p.register.F & 0x10;
     default:
-      throw new Error(`Unknown condition code "${cc}"`);
+      return false;
   }
 };
 
-const getRegAddr = (cpu, hi, lo) => makeWord(cpu.r[hi], cpu.r[lo]);
+const getRegAddr = (p, r1, r2) => (p.register[r1] << 8) + p.register[r2];
 
 const Util = Object.freeze({
   merge,

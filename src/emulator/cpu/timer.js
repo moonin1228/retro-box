@@ -8,22 +8,22 @@ export const createTimer = (cpu, memory) => {
   let divTime = 0;
 
   const updateTimer = (elapsed) => {
-    if (!(memory.rb(TAC) & 0x04)) return;
+    if (!(memory.readByte(TAC) & 0x04)) return;
 
     mainTime += elapsed;
 
-    const tacSel = memory.rb(TAC) & 0x03;
+    const tacSel = memory.readByte(TAC) & 0x03;
     const base = [64, 1, 4, 16][tacSel] * 16;
 
     while (mainTime >= base) {
       mainTime -= base;
 
-      const next = memory.rb(TIMA) + 1;
+      const next = memory.readByte(TIMA) + 1;
       if (next > 0xff) {
-        memory.wb(TIMA, memory.rb(TMA));
+        memory.writeByte(TIMA, memory.readByte(TMA));
         cpu.requestInterrupt(cpu.INTERRUPTS.TIMER);
       } else {
-        memory.wb(TIMA, next);
+        memory.writeByte(TIMA, next);
       }
     }
   };
@@ -34,7 +34,7 @@ export const createTimer = (cpu, memory) => {
 
     if (divTime > DIV_THRESHOLD) {
       divTime -= DIV_THRESHOLD;
-      memory.wb(DIV, (memory.rb(DIV) + 1) & 0xff);
+      memory.writeByte(DIV, (memory.readByte(DIV) + 1) & 0xff);
     }
   };
 

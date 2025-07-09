@@ -52,10 +52,10 @@ const createGameBoy = (canvas, options = {}) => {
       apu.reset();
 
       for (let addr = 0xff10; addr <= 0xff3f; addr++) {
-        cpu.memory.wb(addr, 0);
+        cpu.memory.writeByte(addr, 0);
       }
 
-      cpu.memory.wb(0xff26, 0x00);
+      cpu.memory.writeByte(0xff26, 0x00);
     } catch (error) {
       console.error("Error resetting audio:", error);
     }

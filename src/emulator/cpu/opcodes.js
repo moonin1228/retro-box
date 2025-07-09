@@ -23,9 +23,9 @@ const map = {
     ops.LDrn(cpu, "B");
   },
   0x07(cpu) {
-    const out = cpu.r.A & 0x80 ? 1 : 0;
-    out ? (cpu.r.F = 0x10) : (cpu.r.F = 0);
-    cpu.wr("A", ((cpu.r.A << 1) + out) & 0xff);
+    const out = cpu.register.A & 0x80 ? 1 : 0;
+    out ? (cpu.register.F = 0x10) : (cpu.register.F = 0);
+    cpu.wr("A", ((cpu.register.A << 1) + out) & 0xff);
     cpu.clock.c += 4;
   },
   0x08(cpu) {
@@ -50,14 +50,14 @@ const map = {
     ops.LDrn(cpu, "C");
   },
   0x0f(cpu) {
-    const out = cpu.r.A & 0x01;
-    out ? (cpu.r.F = 0x10) : (cpu.r.F = 0);
-    cpu.wr("A", (cpu.r.A >> 1) | (out * 0x80));
+    const out = cpu.register.A & 0x01;
+    out ? (cpu.register.F = 0x10) : (cpu.register.F = 0);
+    cpu.wr("A", (cpu.register.A >> 1) | (out * 0x80));
     cpu.clock.c += 4;
   },
 
   0x10(cpu) {
-    cpu.r.pc++;
+    cpu.register.pc++;
     cpu.clock.c += 4;
   },
   0x11(cpu) {
@@ -79,10 +79,10 @@ const map = {
     ops.LDrn(cpu, "D");
   },
   0x17(cpu) {
-    const c = cpu.r.F & 0x10 ? 1 : 0;
-    const out = cpu.r.A & 0x80 ? 1 : 0;
-    out ? (cpu.r.F = 0x10) : (cpu.r.F = 0);
-    cpu.wr("A", ((cpu.r.A << 1) + c) & 0xff);
+    const c = cpu.register.F & 0x10 ? 1 : 0;
+    const out = cpu.register.A & 0x80 ? 1 : 0;
+    out ? (cpu.register.F = 0x10) : (cpu.register.F = 0);
+    cpu.wr("A", ((cpu.register.A << 1) + c) & 0xff);
     cpu.clock.c += 4;
   },
   0x18(cpu) {
@@ -107,10 +107,10 @@ const map = {
     ops.LDrn(cpu, "E");
   },
   0x1f(cpu) {
-    const c = cpu.r.F & 0x10 ? 1 : 0;
-    const out = cpu.r.A & 0x01;
-    out ? (cpu.r.F = 0x10) : (cpu.r.F = 0);
-    cpu.wr("A", (cpu.r.A >> 1) | (c * 0x80));
+    const c = cpu.register.F & 0x10 ? 1 : 0;
+    const out = cpu.register.A & 0x01;
+    out ? (cpu.register.F = 0x10) : (cpu.register.F = 0);
+    cpu.wr("A", (cpu.register.A >> 1) | (c * 0x80));
     cpu.clock.c += 4;
   },
 

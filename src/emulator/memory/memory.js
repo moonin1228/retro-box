@@ -105,7 +105,7 @@ export const createMemory = (cpu) => {
     return mem[addr];
   };
 
-  const wb = (addr, value) => {
+  const writeByte = (addr, value) => {
     if (addr < 0x8000 || (addr >= 0xa000 && addr < 0xc000)) {
       if (mbc) mbc.manageWrite(addr, value);
       return;
@@ -150,8 +150,8 @@ export const createMemory = (cpu) => {
     vram,
     oamram,
     deviceram,
-    rb,
-    wb,
+    readByte: rb,
+    writeByte,
     addresses,
   };
 

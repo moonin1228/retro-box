@@ -4,7 +4,18 @@ import { physics } from "@/emulator/display/screen.js";
 import createMemory from "@/emulator/memory/memory.js";
 
 const createCPU = (gameboy) => {
-  const r = { A: 0, F: 0, B: 0, C: 0, D: 0, E: 0, H: 0, L: 0, pc: 0, sp: 0 };
+  const register = {
+    A: 0,
+    B: 0,
+    C: 0,
+    D: 0,
+    E: 0,
+    F: 0,
+    H: 0,
+    L: 0,
+    pc: 0,
+    sp: 0,
+  };
   const clock = { c: 0, serial: 0 };
 
   let IME = false;
@@ -31,7 +42,7 @@ const createCPU = (gameboy) => {
 
   const reset = () => {
     memory.reset();
-    Object.assign(r, {
+    Object.assign(register, {
       A: 0x01,
       F: 0,
       B: 0xff,
@@ -47,16 +58,16 @@ const createCPU = (gameboy) => {
 
   const loadRom = (data) => memory.setRomData(data);
 
-  const getRamSize = () => [0, 2, 8, 32][memory.rb(0x149)] * 1024 || 0;
+  const getRamSize = () => [0, 2, 8, 32][memory.readByte(0x149)] * 1024 || 0;
 
   const getGameName = () => {
     let name = "";
-    for (let i = 0x134; i < 0x143; i++) name += String.fromCharCode(memory.rb(i) || 32);
+    for (let i = 0x134; i < 0x143; i++) name += String.fromCharCode(memory.readByte(i) || 32);
     return name;
   };
 
   const run = () => {
-    r.pc = 0x0100;
+    register.pc = 0x0100;
     frame();
   };
   const stop = () => clearTimeout(nextFrameTimer);
@@ -70,8 +81,8 @@ const createCPU = (gameboy) => {
         const old = clock.c;
 
         if (IME && !pendingInterruptEnable) {
-          const IF = memory.rb(0xff0f);
-          const IE = memory.rb(0xffff);
+          const IF = memory.readByte(0xff0f);
+          const IE = memory.readByte(0xffff);
           const pendingInts = IF & IE & 0x1f;
 
           if (pendingInts) {
@@ -85,16 +96,16 @@ const createCPU = (gameboy) => {
               if (pendingInts & (1 << i)) {
                 IME = false;
 
-                memory.wb(0xff0f, IF & ~(1 << i));
+                memory.writeByte(0xff0f, IF & ~(1 << i));
                 clock.c += 4;
 
-                r.sp = (r.sp - 1) & 0xffff;
-                memory.wb(r.sp, (r.pc >> 8) & 0xff);
-                r.sp = (r.sp - 1) & 0xffff;
-                memory.wb(r.sp, r.pc & 0xff);
+                register.sp = (register.sp - 1) & 0xffff;
+                memory.writeByte(register.sp, (register.pc >> 8) & 0xff);
+                register.sp = (register.sp - 1) & 0xffff;
+                memory.writeByte(register.sp, register.pc & 0xff);
                 clock.c += 8;
 
-                r.pc = 0x40 + i * 8;
+                register.pc = 0x40 + i * 8;
                 clock.c += 8;
 
                 break;
@@ -107,13 +118,13 @@ const createCPU = (gameboy) => {
         if (isHalted) {
           clock.c += 4;
 
-          const IF = memory.rb(0xff0f);
-          const IE = memory.rb(0xffff);
+          const IF = memory.readByte(0xff0f);
+          const IE = memory.readByte(0xffff);
           if (IF & IE & 0x1f) {
             isHalted = false;
             justWokeFromHalt = true;
             if (!IME) {
-              r.pc = (r.pc - 1) & 0xffff;
+              register.pc = (register.pc - 1) & 0xffff;
             }
           }
         } else {
@@ -125,7 +136,7 @@ const createCPU = (gameboy) => {
           }
 
           opcodeMap[op](instance);
-          r.F &= 0xf0;
+          register.F &= 0xf0;
           if (op === 0xfb) {
             pendingInterruptEnable = true;
             clock.c += 4;
@@ -148,24 +159,21 @@ const createCPU = (gameboy) => {
   };
 
   const fetchOpcode = () => {
-    const op = memory.rb(r.pc);
-    r.pc = (r.pc + 1) & 0xffff;
+    const op = memory.readByte(register.pc);
+    register.pc = (register.pc + 1) & 0xffff;
     if (op === undefined || op === null) {
-      throw new Error(`Cannot read opcode at address ${r.pc.toString(16)}`);
+      throw new Error(`Cannot read opcode at address ${register.pc.toString(16)}`);
     }
     if (!opcodeMap[op]) {
-      throw new Error(`Unknown opcode ${op.toString(16)} @ ${r.pc.toString(16)}`);
+      throw new Error(`Unknown opcode ${op.toString(16)} @ ${register.pc.toString(16)}`);
     }
     return op;
   };
 
-  const rr = (k) => r[k];
-  const wr = (k, v) => {
-    if (k === "pc" || k === "sp") {
-      r[k] = v & 0xffff;
-    } else {
-      r[k] = v & 0xff;
-    }
+  const rr = (k) => register[k];
+  const wr = (reg, val) => {
+    register[reg] = val & 0xff;
+    if (reg === "sp" || reg === "pc") register[reg] = val & 0xffff;
   };
 
   const halt = () => {
@@ -199,7 +207,7 @@ const createCPU = (gameboy) => {
   };
 
   const requestInterrupt = (t) => {
-    memory.wb(0xff0f, memory.rb(0xff0f) | (1 << t));
+    memory.writeByte(0xff0f, memory.readByte(0xff0f) | (1 << t));
   };
 
   const resetDivTimer = () => timer.resetDiv();
@@ -207,7 +215,7 @@ const createCPU = (gameboy) => {
   Object.assign(
     instance,
     Object.freeze({
-      r,
+      register,
       clock,
       memory,
       timer,
