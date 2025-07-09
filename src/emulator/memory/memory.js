@@ -3,7 +3,7 @@ import createMBC from "@/emulator/memory/mbc.js";
 const MEM_SIZE = 0x10000;
 const BANK_SIZE = 0x4000;
 
-export const addresses = Object.freeze({
+const addresses = Object.freeze({
   VRAM_START: 0x8000,
   VRAM_END: 0x9fff,
   EXTRAM_START: 0xa000,
@@ -20,7 +20,7 @@ const apuMask = [
   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ];
 
-export const createMemory = (cpu) => {
+const createMemory = (cpu) => {
   const mem = new Uint8Array(MEM_SIZE);
   let rom = null;
   let mbc = null;

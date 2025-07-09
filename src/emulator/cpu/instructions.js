@@ -3,8 +3,8 @@ import Util from "@/emulator/util/util.js";
 
 const ops = {
   LDrrnn(p, r1, r2) {
-    p.wr(r2, p.memory.readByte(p.register.pc));
-    p.wr(r1, p.memory.readByte(p.register.pc + 1));
+    p.setRegister(r2, p.memory.readByte(p.register.pc));
+    p.setRegister(r1, p.memory.readByte(p.register.pc + 1));
     p.register.pc += 2;
     p.clock.c += 12;
   },
@@ -13,15 +13,15 @@ const ops = {
     p.clock.c += 8;
   },
   LDrrra(p, r1, r2, r3) {
-    p.wr(r1, p.memory.readByte(Util.getRegAddr(p, r2, r3)));
+    p.setRegister(r1, p.memory.readByte(Util.getRegAddr(p, r2, r3)));
     p.clock.c += 8;
   },
   LDrn(p, r1) {
-    p.wr(r1, p.memory.readByte(p.register.pc++));
+    p.setRegister(r1, p.memory.readByte(p.register.pc++));
     p.clock.c += 8;
   },
   LDrr(p, r1, r2) {
-    p.wr(r1, p.register[r2]);
+    p.setRegister(r1, p.register[r2]);
     p.clock.c += 4;
   },
   LDrar(p, r1, r2) {
@@ -29,16 +29,19 @@ const ops = {
     p.clock.c += 8;
   },
   LDrra(p, r1, r2) {
-    p.wr(r1, p.memory.readByte(p.register[r2] + 0xff00));
+    p.setRegister(r1, p.memory.readByte(p.register[r2] + 0xff00));
     p.clock.c += 8;
   },
   LDspnn(p) {
-    p.wr("sp", (p.memory.readByte(p.register.pc + 1) << 8) + p.memory.readByte(p.register.pc));
+    p.setRegister(
+      "sp",
+      (p.memory.readByte(p.register.pc + 1) << 8) + p.memory.readByte(p.register.pc),
+    );
     p.register.pc += 2;
     p.clock.c += 12;
   },
   LDsprr(p, r1, r2) {
-    p.wr("sp", Util.getRegAddr(p, r1, r2));
+    p.setRegister("sp", Util.getRegAddr(p, r1, r2));
     p.clock.c += 8;
   },
   LDnnar(p, r1) {
@@ -49,7 +52,7 @@ const ops = {
   },
   LDrnna(p, r1) {
     const addr = (p.memory.readByte(p.register.pc + 1) << 8) + p.memory.readByte(p.register.pc);
-    p.wr(r1, p.memory.readByte(addr));
+    p.setRegister(r1, p.memory.readByte(addr));
     p.register.pc += 2;
     p.clock.c += 16;
   },
@@ -63,9 +66,9 @@ const ops = {
     let f = 0;
     if (h) f |= 0x20;
     if (c) f |= 0x10;
-    p.wr("F", f);
-    p.wr(r1, val >> 8);
-    p.wr(r2, val & 0xff);
+    p.setRegister("F", f);
+    p.setRegister(r1, val >> 8);
+    p.setRegister(r2, val & 0xff);
     p.clock.c += 12;
   },
   LDnnsp(p) {
@@ -87,12 +90,12 @@ const ops = {
     p.clock.c += 12;
   },
   LDHrna(p, r1) {
-    p.wr(r1, p.memory.readByte(0xff00 + p.memory.readByte(p.register.pc++)));
+    p.setRegister(r1, p.memory.readByte(0xff00 + p.memory.readByte(p.register.pc++)));
     p.clock.c += 12;
   },
   INCrr(p, r1, r2) {
-    p.wr(r2, (p.register[r2] + 1) & 0xff);
-    if (p.register[r2] === 0) p.wr(r1, (p.register[r1] + 1) & 0xff);
+    p.setRegister(r2, (p.register[r2] + 1) & 0xff);
+    if (p.register[r2] === 0) p.setRegister(r1, (p.register[r1] + 1) & 0xff);
     p.clock.c += 8;
   },
   INCrra(p, r1, r2) {
@@ -107,13 +110,13 @@ const ops = {
     p.clock.c += 12;
   },
   INCsp(p) {
-    p.wr("sp", p.register.sp + 1);
+    p.setRegister("sp", p.register.sp + 1);
     p.register.sp &= 0xffff;
     p.clock.c += 8;
   },
   INCr(p, r1) {
     const h = ((p.register[r1] & 0xf) + 1) & 0x10;
-    p.wr(r1, (p.register[r1] + 1) & 0xff);
+    p.setRegister(r1, (p.register[r1] + 1) & 0xff);
     const z = p.register[r1] === 0;
     p.register.F &= 0x10;
     if (h) p.register.F |= 0x20;
@@ -121,18 +124,18 @@ const ops = {
     p.clock.c += 4;
   },
   DECrr(p, r1, r2) {
-    p.wr(r2, (p.register[r2] - 1) & 0xff);
-    if (p.register[r2] === 0xff) p.wr(r1, (p.register[r1] - 1) & 0xff);
+    p.setRegister(r2, (p.register[r2] - 1) & 0xff);
+    if (p.register[r2] === 0xff) p.setRegister(r1, (p.register[r1] - 1) & 0xff);
     p.clock.c += 8;
   },
   DECsp(p) {
-    p.wr("sp", p.register.sp - 1);
+    p.setRegister("sp", p.register.sp - 1);
     p.register.sp &= 0xffff;
     p.clock.c += 8;
   },
   DECr(p, r1) {
     const h = (p.register[r1] & 0xf) < 1;
-    p.wr(r1, (p.register[r1] - 1) & 0xff);
+    p.setRegister(r1, (p.register[r1] - 1) & 0xff);
     const z = p.register[r1] === 0;
     p.register.F &= 0x10;
     p.register.F |= 0x40;
@@ -166,12 +169,12 @@ const ops = {
     const h = (p.register[r1] & 0xf) + (n & 0xf) > 0xf;
     const result = p.register[r1] + n;
     const c = result > 0xff;
-    p.wr(r1, result & 0xff);
+    p.setRegister(r1, result & 0xff);
     let f = 0;
     if (p.register[r1] === 0) f |= 0x80;
     if (h) f |= 0x20;
     if (c) f |= 0x10;
-    p.wr("F", f);
+    p.setRegister("F", f);
   },
   ADDrrrr(p, r1, r2, r3, r4) {
     ops._ADDrrn(p, r1, r2, (p.register[r3] << 8) + p.register[r4]);
@@ -189,8 +192,8 @@ const ops = {
     let f = 0;
     if (h) f |= 0x20;
     if (c) f |= 0x10;
-    p.wr("F", f);
-    p.wr("sp", (p.register.sp + v) & 0xffff);
+    p.setRegister("F", f);
+    p.setRegister("sp", (p.register.sp + v) & 0xffff);
     p.clock.c += 16;
   },
   _ADDrrn(p, r1, r2, n) {
@@ -225,12 +228,12 @@ const ops = {
     const result = p.register[r1] + n + prevCarry;
     const h = (p.register[r1] & 0xf) + (n & 0xf) + prevCarry > 0xf;
     const c = result > 0xff;
-    p.wr(r1, result & 0xff);
+    p.setRegister(r1, result & 0xff);
     let f = 0;
     if ((result & 0xff) === 0) f |= 0x80;
     if (h) f |= 0x20;
     if (c) f |= 0x10;
-    p.wr("F", f);
+    p.setRegister("F", f);
   },
   ADCrrra(p, r1, r2, r3) {
     const n = p.memory.readByte(Util.getRegAddr(p, r2, r3));
@@ -242,12 +245,12 @@ const ops = {
     const result = p.register[r1] + v;
     const h = (p.register[r1] & 0xf) + (v & 0xf) > 0xf;
     const c = result > 0xff;
-    p.wr(r1, result & 0xff);
+    p.setRegister(r1, result & 0xff);
     let f = 0;
     if ((result & 0xff) === 0) f |= 0x80;
     if (h) f |= 0x20;
     if (c) f |= 0x10;
-    p.wr("F", f);
+    p.setRegister("F", f);
     p.clock.c += 8;
   },
   SUBr(p, r1) {
@@ -269,12 +272,12 @@ const ops = {
     const result = p.register.A - n;
     const h = (p.register.A & 0xf) < (n & 0xf);
     const c = result < 0;
-    p.wr("A", result & 0xff);
+    p.setRegister("A", result & 0xff);
     let f = 0x40;
     if ((result & 0xff) === 0) f |= 0x80;
     if (h) f |= 0x20;
     if (c) f |= 0x10;
-    p.wr("F", f);
+    p.setRegister("F", f);
   },
   SBCn(p) {
     const n = p.memory.readByte(p.register.pc++);
@@ -296,12 +299,12 @@ const ops = {
     const result = p.register.A - n - prevCarry;
     const h = (p.register.A & 0xf) < (n & 0xf) + prevCarry;
     const c = result < 0;
-    p.wr("A", result & 0xff);
+    p.setRegister("A", result & 0xff);
     let f = 0x40;
     if ((result & 0xff) === 0) f |= 0x80;
     if (h) f |= 0x20;
     if (c) f |= 0x10;
-    p.wr("F", f);
+    p.setRegister("F", f);
   },
   ORr(p, r1) {
     p.register.A |= p.register[r1];
@@ -547,7 +550,10 @@ const ops = {
     return ((n & 0xf0) >> 4) | ((n & 0x0f) << 4);
   },
   JPnn(p) {
-    p.wr("pc", (p.memory.readByte(p.register.pc + 1) << 8) + p.memory.readByte(p.register.pc));
+    p.setRegister(
+      "pc",
+      (p.memory.readByte(p.register.pc + 1) << 8) + p.memory.readByte(p.register.pc),
+    );
     p.clock.c += 16;
   },
   JRccn(p, cc) {
@@ -563,7 +569,10 @@ const ops = {
   },
   JPccnn(p, cc) {
     if (Util.testFlag(p, cc)) {
-      p.wr("pc", (p.memory.readByte(p.register.pc + 1) << 8) + p.memory.readByte(p.register.pc));
+      p.setRegister(
+        "pc",
+        (p.memory.readByte(p.register.pc + 1) << 8) + p.memory.readByte(p.register.pc),
+      );
       p.clock.c += 4;
     } else {
       p.register.pc += 2;
@@ -581,40 +590,40 @@ const ops = {
     p.clock.c += 12;
   },
   PUSHrr(p, r1, r2) {
-    p.wr("sp", p.register.sp - 1);
+    p.setRegister("sp", p.register.sp - 1);
     p.memory.writeByte(p.register.sp, p.register[r1]);
-    p.wr("sp", p.register.sp - 1);
+    p.setRegister("sp", p.register.sp - 1);
     p.memory.writeByte(p.register.sp, p.register[r2]);
     p.clock.c += 16;
   },
   POPrr(p, r1, r2) {
-    p.wr(r2, p.memory.readByte(p.register.sp));
-    p.wr("sp", p.register.sp + 1);
-    p.wr(r1, p.memory.readByte(p.register.sp));
-    p.wr("sp", p.register.sp + 1);
+    p.setRegister(r2, p.memory.readByte(p.register.sp));
+    p.setRegister("sp", p.register.sp + 1);
+    p.setRegister(r1, p.memory.readByte(p.register.sp));
+    p.setRegister("sp", p.register.sp + 1);
     p.clock.c += 12;
   },
   RSTn(p, n) {
-    p.wr("sp", p.register.sp - 1);
+    p.setRegister("sp", p.register.sp - 1);
     p.memory.writeByte(p.register.sp, p.register.pc >> 8);
-    p.wr("sp", p.register.sp - 1);
+    p.setRegister("sp", p.register.sp - 1);
     p.memory.writeByte(p.register.sp, p.register.pc & 0xff);
     p.register.pc = n;
     p.clock.c += 16;
   },
   RET(p) {
     p.register.pc = p.memory.readByte(p.register.sp);
-    p.wr("sp", p.register.sp + 1);
+    p.setRegister("sp", p.register.sp + 1);
     p.register.pc += p.memory.readByte(p.register.sp) << 8;
-    p.wr("sp", p.register.sp + 1);
+    p.setRegister("sp", p.register.sp + 1);
     p.clock.c += 16;
   },
   RETcc(p, cc) {
     if (Util.testFlag(p, cc)) {
       p.register.pc = p.memory.readByte(p.register.sp);
-      p.wr("sp", p.register.sp + 1);
+      p.setRegister("sp", p.register.sp + 1);
       p.register.pc += p.memory.readByte(p.register.sp) << 8;
-      p.wr("sp", p.register.sp + 1);
+      p.setRegister("sp", p.register.sp + 1);
       p.clock.c += 12;
     }
     p.clock.c += 8;
@@ -633,15 +642,15 @@ const ops = {
     p.clock.c += 12;
   },
   _CALLnn(p) {
-    p.wr("sp", p.register.sp - 1);
+    p.setRegister("sp", p.register.sp - 1);
     p.memory.writeByte(p.register.sp, ((p.register.pc + 2) & 0xff00) >> 8);
-    p.wr("sp", p.register.sp - 1);
+    p.setRegister("sp", p.register.sp - 1);
     p.memory.writeByte(p.register.sp, (p.register.pc + 2) & 0x00ff);
     const j = p.memory.readByte(p.register.pc) + (p.memory.readByte(p.register.pc + 1) << 8);
     p.register.pc = j;
   },
   CPL(p) {
-    p.wr("A", ~p.register.A & 0xff);
+    p.setRegister("A", ~p.register.A & 0xff);
     ((p.register.F |= 0x60), (p.clock.c += 4));
   },
   CCF(p) {

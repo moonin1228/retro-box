@@ -25,7 +25,7 @@ const map = {
   0x07(cpu) {
     const out = cpu.register.A & 0x80 ? 1 : 0;
     out ? (cpu.register.F = 0x10) : (cpu.register.F = 0);
-    cpu.wr("A", ((cpu.register.A << 1) + out) & 0xff);
+    cpu.setRegister("A", ((cpu.register.A << 1) + out) & 0xff);
     cpu.clock.c += 4;
   },
   0x08(cpu) {
@@ -52,7 +52,7 @@ const map = {
   0x0f(cpu) {
     const out = cpu.register.A & 0x01;
     out ? (cpu.register.F = 0x10) : (cpu.register.F = 0);
-    cpu.wr("A", (cpu.register.A >> 1) | (out * 0x80));
+    cpu.setRegister("A", (cpu.register.A >> 1) | (out * 0x80));
     cpu.clock.c += 4;
   },
 
@@ -82,7 +82,7 @@ const map = {
     const c = cpu.register.F & 0x10 ? 1 : 0;
     const out = cpu.register.A & 0x80 ? 1 : 0;
     out ? (cpu.register.F = 0x10) : (cpu.register.F = 0);
-    cpu.wr("A", ((cpu.register.A << 1) + c) & 0xff);
+    cpu.setRegister("A", ((cpu.register.A << 1) + c) & 0xff);
     cpu.clock.c += 4;
   },
   0x18(cpu) {
@@ -110,7 +110,7 @@ const map = {
     const c = cpu.register.F & 0x10 ? 1 : 0;
     const out = cpu.register.A & 0x01;
     out ? (cpu.register.F = 0x10) : (cpu.register.F = 0);
-    cpu.wr("A", (cpu.register.A >> 1) | (c * 0x80));
+    cpu.setRegister("A", (cpu.register.A >> 1) | (c * 0x80));
     cpu.clock.c += 4;
   },
 

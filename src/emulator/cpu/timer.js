@@ -1,4 +1,4 @@
-export const createTimer = (cpu, memory) => {
+const createTimer = (cpu, memory) => {
   const DIV = 0xff04;
   const TIMA = 0xff05;
   const TMA = 0xff06;

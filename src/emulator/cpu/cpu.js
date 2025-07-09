@@ -83,9 +83,9 @@ const createCPU = (gameboy) => {
         if (IME && !pendingInterruptEnable) {
           const IF = memory.readByte(0xff0f);
           const IE = memory.readByte(0xffff);
-          const pendingInts = IF & IE & 0x1f;
+          const pendingInterrupts = IF & IE & 0x1f;
 
-          if (pendingInts) {
+          if (pendingInterrupts) {
             if (isHalted) {
               isHalted = false;
               justWokeFromHalt = true;
@@ -93,7 +93,7 @@ const createCPU = (gameboy) => {
             }
 
             for (let i = 0; i < 5; i++) {
-              if (pendingInts & (1 << i)) {
+              if (pendingInterrupts & (1 << i)) {
                 IME = false;
 
                 memory.writeByte(0xff0f, IF & ~(1 << i));
@@ -128,16 +128,16 @@ const createCPU = (gameboy) => {
             }
           }
         } else {
-          const op = fetchOpcode();
+          const currentOpcode = fetchOpcode();
 
           if (justWokeFromHalt) {
             justWokeFromHalt = false;
             clock.c += 4;
           }
 
-          opcodeMap[op](instance);
+          opcodeMap[currentOpcode](instance);
           register.F &= 0xf0;
-          if (op === 0xfb) {
+          if (currentOpcode === 0xfb) {
             pendingInterruptEnable = true;
             clock.c += 4;
           } else if (pendingInterruptEnable) {
@@ -170,8 +170,8 @@ const createCPU = (gameboy) => {
     return op;
   };
 
-  const rr = (k) => register[k];
-  const wr = (reg, val) => {
+  const getRegister = (k) => register[k];
+  const setRegister = (reg, val) => {
     register[reg] = val & 0xff;
     if (reg === "sp" || reg === "pc") register[reg] = val & 0xffff;
   };
@@ -228,8 +228,8 @@ const createCPU = (gameboy) => {
       stop,
       pause,
       unpause,
-      rr,
-      wr,
+      getRegister,
+      setRegister,
       halt,
       unhalt,
       requestInterrupt,
