@@ -22,7 +22,7 @@ function GameBoyEmulator({ romData }) {
       const gbVolume = Math.floor((volume / 100) * 7);
       const nr50Value = (gbVolume << 4) | gbVolume;
       if (gameBoyRef.current.cpu?.memory) {
-        gameBoyRef.current.cpu.memory.wb(0xff24, nr50Value);
+        gameBoyRef.current.cpu.memory.writeByte(0xff24, nr50Value);
       }
     }
   };

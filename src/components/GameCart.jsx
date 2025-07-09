@@ -33,6 +33,7 @@ function GameCart({ romData, title, onPlay }) {
 export const createGameCartFromFile = async (file) => {
   try {
     const arrayBuffer = await file.arrayBuffer();
+
     const romData = new Uint8Array(arrayBuffer);
     const title = extractGameTitle(romData);
 
@@ -41,8 +42,8 @@ export const createGameCartFromFile = async (file) => {
       title: title || file.name,
       fileName: file.name,
     };
-  } catch (error) {
-    throw new Error("파일 읽기 실패");
+  } catch (err) {
+    throw new Error(`파일 읽기 실패: ${err.message}`);
   }
 };
 

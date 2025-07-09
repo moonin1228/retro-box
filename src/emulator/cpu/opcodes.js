@@ -2,7 +2,7 @@ import { cpuOps as ops } from "@/emulator/cpu/instructions.js";
 
 const map = {
   0x00(cpu) {
-    cpu.clock.c += 4;
+    cpu.clock.cycles += 4;
   },
   0x01(cpu) {
     ops.LDrrnn(cpu, "B", "C");
@@ -23,10 +23,10 @@ const map = {
     ops.LDrn(cpu, "B");
   },
   0x07(cpu) {
-    const out = cpu.r.A & 0x80 ? 1 : 0;
-    out ? (cpu.r.F = 0x10) : (cpu.r.F = 0);
-    cpu.wr("A", ((cpu.r.A << 1) + out) & 0xff);
-    cpu.clock.c += 4;
+    const out = cpu.register.A & 0x80 ? 1 : 0;
+    out ? (cpu.register.F = 0x10) : (cpu.register.F = 0);
+    cpu.setRegister("A", ((cpu.register.A << 1) + out) & 0xff);
+    cpu.clock.cycles += 4;
   },
   0x08(cpu) {
     ops.LDnnsp(cpu);
@@ -50,15 +50,15 @@ const map = {
     ops.LDrn(cpu, "C");
   },
   0x0f(cpu) {
-    const out = cpu.r.A & 0x01;
-    out ? (cpu.r.F = 0x10) : (cpu.r.F = 0);
-    cpu.wr("A", (cpu.r.A >> 1) | (out * 0x80));
-    cpu.clock.c += 4;
+    const out = cpu.register.A & 0x01;
+    out ? (cpu.register.F = 0x10) : (cpu.register.F = 0);
+    cpu.setRegister("A", (cpu.register.A >> 1) | (out * 0x80));
+    cpu.clock.cycles += 4;
   },
 
   0x10(cpu) {
-    cpu.r.pc++;
-    cpu.clock.c += 4;
+    cpu.register.pc++;
+    cpu.clock.cycles += 4;
   },
   0x11(cpu) {
     ops.LDrrnn(cpu, "D", "E");
@@ -79,11 +79,11 @@ const map = {
     ops.LDrn(cpu, "D");
   },
   0x17(cpu) {
-    const c = cpu.r.F & 0x10 ? 1 : 0;
-    const out = cpu.r.A & 0x80 ? 1 : 0;
-    out ? (cpu.r.F = 0x10) : (cpu.r.F = 0);
-    cpu.wr("A", ((cpu.r.A << 1) + c) & 0xff);
-    cpu.clock.c += 4;
+    const c = cpu.register.F & 0x10 ? 1 : 0;
+    const out = cpu.register.A & 0x80 ? 1 : 0;
+    out ? (cpu.register.F = 0x10) : (cpu.register.F = 0);
+    cpu.setRegister("A", ((cpu.register.A << 1) + c) & 0xff);
+    cpu.clock.cycles += 4;
   },
   0x18(cpu) {
     ops.JRn(cpu);
@@ -107,11 +107,11 @@ const map = {
     ops.LDrn(cpu, "E");
   },
   0x1f(cpu) {
-    const c = cpu.r.F & 0x10 ? 1 : 0;
-    const out = cpu.r.A & 0x01;
-    out ? (cpu.r.F = 0x10) : (cpu.r.F = 0);
-    cpu.wr("A", (cpu.r.A >> 1) | (c * 0x80));
-    cpu.clock.c += 4;
+    const c = cpu.register.F & 0x10 ? 1 : 0;
+    const out = cpu.register.A & 0x01;
+    out ? (cpu.register.F = 0x10) : (cpu.register.F = 0);
+    cpu.setRegister("A", (cpu.register.A >> 1) | (c * 0x80));
+    cpu.clock.cycles += 4;
   },
 
   0x20(cpu) {
@@ -123,7 +123,7 @@ const map = {
   0x22(cpu) {
     ops.LDrrar(cpu, "H", "L", "A");
     ops.INCrr(cpu, "H", "L");
-    cpu.clock.c -= 8;
+    cpu.clock.cycles -= 8;
   },
   0x23(cpu) {
     ops.INCrr(cpu, "H", "L");
@@ -149,7 +149,7 @@ const map = {
   0x2a(cpu) {
     ops.LDrrra(cpu, "A", "H", "L");
     ops.INCrr(cpu, "H", "L");
-    cpu.clock.c -= 8;
+    cpu.clock.cycles -= 8;
   },
   0x2b(cpu) {
     ops.DECrr(cpu, "H", "L");
@@ -176,7 +176,7 @@ const map = {
   0x32(cpu) {
     ops.LDrrar(cpu, "H", "L", "A");
     ops.DECrr(cpu, "H", "L");
-    cpu.clock.c -= 8;
+    cpu.clock.cycles -= 8;
   },
   0x33(cpu) {
     ops.INCsp(cpu);
@@ -202,7 +202,7 @@ const map = {
   0x3a(cpu) {
     ops.LDrrra(cpu, "A", "H", "L");
     ops.DECrr(cpu, "H", "L");
-    cpu.clock.c -= 8;
+    cpu.clock.cycles -= 8;
   },
   0x3b(cpu) {
     ops.DECsp(cpu);

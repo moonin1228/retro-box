@@ -1,43 +1,29 @@
+import {
+  ADDRESSES,
+  APU_REGISTER_MASK,
+  MEMORY_SIZE,
+  ROM_BANK_SIZE,
+} from "@/constants/memoryConstants.js";
 import createMBC from "@/emulator/memory/mbc.js";
 
-const MEM_SIZE = 0x10000;
-const BANK_SIZE = 0x4000;
-
-export const addresses = Object.freeze({
-  VRAM_START: 0x8000,
-  VRAM_END: 0x9fff,
-  EXTRAM_START: 0xa000,
-  EXTRAM_END: 0xbfff,
-  OAM_START: 0xfe00,
-  OAM_END: 0xfe9f,
-  DEVICE_START: 0xff00,
-  DEVICE_END: 0xff7f,
-});
-
-const apuMask = [
-  0x80, 0x3f, 0x00, 0xff, 0xbf, 0xff, 0x3f, 0x00, 0xff, 0xbf, 0x7f, 0xff, 0x9f, 0xff, 0xbf, 0xff,
-  0xff, 0x00, 0x00, 0xbf, 0x00, 0x00, 0x70, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-];
-
-export const createMemory = (cpu) => {
-  const mem = new Uint8Array(MEM_SIZE);
+const creatememoryory = (cpu) => {
+  const memory = new Uint8Array(MEMORY_SIZE);
   let rom = null;
   let mbc = null;
   let mbcType = 0;
 
   const reset = () => {
-    mem.fill(0);
+    memory.fill(0);
 
-    mem[0xffff] = 0x00;
-    mem[0xff47] = 0xfc;
-    mem[0xff04] = 0x18;
+    memory[0xffff] = 0x00;
+    memory[0xff47] = 0xfc;
+    memory[0xff04] = 0x18;
   };
 
   const loadRomBank = (index) => {
-    const dst = index ? 0x4000 : 0x0000;
-    const src = index * BANK_SIZE;
-    mem.set(rom.subarray(src, src + BANK_SIZE), dst);
+    const destination = index ? 0x4000 : 0x0000;
+    const sourceOffset = index * ROM_BANK_SIZE;
+    memory.set(rom.subarray(sourceOffset, sourceOffset + ROM_BANK_SIZE), destination);
   };
 
   const setRomData = (data) => {
@@ -52,28 +38,28 @@ export const createMemory = (cpu) => {
     }
   };
 
-  const vram = (addr) => {
-    if (addr < addresses.VRAM_START || addr > addresses.VRAM_END)
-      throw new Error(`VRAM out-of-bounds: ${addr.toString(16)}`);
-    return mem[addr];
+  const vram = (address) => {
+    if (address < ADDRESSES.VRAM_START || address > ADDRESSES.VRAM_END)
+      throw new Error(`VRAM out-of-bounds: ${address.toString(16)}`);
+    return memory[address];
   };
 
-  const oamram = (addr) => {
-    if (addr < addresses.OAM_START || addr > addresses.OAM_END)
-      throw new Error(`OAM out-of-bounds: ${addr.toString(16)}`);
-    return mem[addr];
+  const oamram = (address) => {
+    if (address < ADDRESSES.OAM_START || address > ADDRESSES.OAM_END)
+      throw new Error(`OAM out-of-bounds: ${address.toString(16)}`);
+    return memory[address];
   };
 
-  const deviceram = (addr, value) => {
-    if (addr < addresses.DEVICE_START || addr > addresses.DEVICE_END)
-      throw new Error(`IO out-of-bounds: ${addr.toString(16)}`);
-    if (value === undefined) return mem[addr];
-    mem[addr] = value;
+  const deviceram = (address, value) => {
+    if (address < ADDRESSES.DEVICE_START || address > ADDRESSES.DEVICE_END)
+      throw new Error(`IO out-of-bounds: ${address.toString(16)}`);
+    if (value === undefined) return memory[address];
+    memory[address] = value;
   };
 
-  const rb = (addr) => {
-    if (addr === 0xff00) {
-      const selector = mem[addr] & 0x30;
+  const rb = (address) => {
+    if (address === 0xff00) {
+      const selector = memory[address] & 0x30;
       let inputBits = 0x0f;
 
       if (cpu.input && cpu.input.getInputMask) {
@@ -89,70 +75,71 @@ export const createMemory = (cpu) => {
       return selector | inputBits;
     }
 
-    if (addr >= 0xff10 && addr <= 0xff3f) {
+    if (address >= 0xff10 && address <= 0xff3f) {
       if (cpu.apu) {
-        const value = cpu.apu.readRegister(addr);
+        const value = cpu.apu.readRegister(address);
         if (value !== undefined) {
-          return value | (apuMask[addr - 0xff10] || 0xff);
+          return value | (APU_REGISTER_MASK[address - 0xff10] || 0xff);
         }
       }
-      return mem[addr] | (apuMask[addr - 0xff10] || 0xff);
+      return memory[address] | (APU_REGISTER_MASK[address - 0xff10] || 0xff);
     }
 
-    if (addr >= 0xa000 && addr < 0xc000) {
-      return mbc ? mbc.readRam(addr) : 0;
+    if (address >= 0xa000 && address < 0xc000) {
+      return mbc ? mbc.readRam(address) : 0;
     }
-    return mem[addr];
+    return memory[address];
   };
 
-  const wb = (addr, value) => {
-    if (addr < 0x8000 || (addr >= 0xa000 && addr < 0xc000)) {
-      if (mbc) mbc.manageWrite(addr, value);
+  const writeByte = (address, value) => {
+    if (address < 0x8000 || (address >= 0xa000 && address < 0xc000)) {
+      if (mbc) mbc.manageWrite(address, value);
       return;
     }
 
-    if (addr >= 0xff10 && addr <= 0xff3f) {
-      mem[addr] = value;
+    if (address >= 0xff10 && address <= 0xff3f) {
+      memory[address] = value;
       if (cpu.apu) {
         try {
-          cpu.apu.writeRegister(addr, value);
+          cpu.apu.writeRegister(address, value);
         } catch (error) {
-          console.error(`Error writing to APU register ${addr.toString(16)}:`, error);
+          console.error(`Error writing to APU register ${address.toString(16)}:`, error);
         }
       }
       return;
     }
 
-    if (addr === 0xff00) {
-      mem[addr] = (mem[addr] & 0x0f) | (value & 0x30);
+    if (address === 0xff00) {
+      memory[address] = (memory[address] & 0x0f) | (value & 0x30);
       return;
     }
 
-    mem[addr] = value;
+    memory[address] = value;
 
-    if ((addr & 0xff00) === 0xff00) {
-      if (addr === 0xff02 && value & 0x80 && cpu.enableSerialTransfer) cpu.enableSerialTransfer();
-      if (addr === 0xff04 && cpu.resetDivTimer) cpu.resetDivTimer();
-      if (addr === 0xff46) dmaTransfer(value);
+    if ((address & 0xff00) === 0xff00) {
+      if (address === 0xff02 && value & 0x80 && cpu.enableSerialTransfer)
+        cpu.enableSerialTransfer();
+      if (address === 0xff04 && cpu.resetDivTimer) cpu.resetDivTimer();
+      if (address === 0xff46) dmaTransfer(value);
     }
   };
 
   const dmaTransfer = (highByte) => {
     const source = highByte << 8;
-    mem.set(mem.subarray(source, source + 0xa0), addresses.OAM_START);
+    memory.set(memory.subarray(source, source + 0xa0), ADDRESSES.OAM_START);
   };
 
   const instance = {
-    mem,
+    memory,
     reset,
     setRomData,
     loadRomBank,
     vram,
     oamram,
     deviceram,
-    rb,
-    wb,
-    addresses,
+    readByte: rb,
+    writeByte,
+    ADDRESSES,
   };
 
   mbc = createMBC(instance, mbcType);
@@ -160,4 +147,4 @@ export const createMemory = (cpu) => {
   return instance;
 };
 
-export default createMemory;
+export default creatememoryory;
