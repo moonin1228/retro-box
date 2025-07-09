@@ -1,9 +1,11 @@
+import { INITIAL_REGISTER, INTERRUPTS } from "@/constants/cpuConstants.js";
 import { opcodeMap } from "@/emulator/cpu/opcodes.js";
 import createTimer from "@/emulator/cpu/timer.js";
 import { physics } from "@/emulator/display/screen.js";
 import createMemory from "@/emulator/memory/memory.js";
 
 const createCPU = (gameboy) => {
+  const instance = {};
   const register = {
     A: 0,
     B: 0,
@@ -16,9 +18,9 @@ const createCPU = (gameboy) => {
     pc: 0,
     sp: 0,
   };
-  const clock = { c: 0, serial: 0 };
+  const clock = { cycles: 0, serial: 0 };
 
-  let IME = false;
+  let isInterruptMasterEnabled = false;
   let isHalted = false;
   let isPaused = false;
   let pendingInterruptEnable = false;
@@ -26,34 +28,14 @@ const createCPU = (gameboy) => {
 
   let nextFrameTimer = null;
 
-  const instance = {};
   instance.imeDelay = false;
 
   const memory = createMemory(instance);
   const timer = createTimer(instance, memory);
 
-  const INTERRUPTS = Object.freeze({
-    VBLANK: 0,
-    LCDC: 1,
-    TIMER: 2,
-    SERIAL: 3,
-    HILO: 4,
-  });
-
   const reset = () => {
     memory.reset();
-    Object.assign(register, {
-      A: 0x01,
-      F: 0,
-      B: 0xff,
-      C: 0x13,
-      D: 0,
-      E: 0xc1,
-      H: 0x84,
-      L: 0x03,
-      pc: 0,
-      sp: 0xfffe,
-    });
+    Object.assign(register, INITIAL_REGISTER);
   };
 
   const loadRom = (data) => memory.setRomData(data);
@@ -78,9 +60,9 @@ const createCPU = (gameboy) => {
     try {
       let vblank = false;
       while (!vblank) {
-        const old = clock.c;
+        const old = clock.cycles;
 
-        if (IME && !pendingInterruptEnable) {
+        if (isInterruptMasterEnabled && !pendingInterruptEnable) {
           const IF = memory.readByte(0xff0f);
           const IE = memory.readByte(0xffff);
           const pendingInterrupts = IF & IE & 0x1f;
@@ -89,24 +71,24 @@ const createCPU = (gameboy) => {
             if (isHalted) {
               isHalted = false;
               justWokeFromHalt = true;
-              clock.c += 4;
+              clock.cycles += 4;
             }
 
             for (let i = 0; i < 5; i++) {
               if (pendingInterrupts & (1 << i)) {
-                IME = false;
+                isInterruptMasterEnabled = false;
 
                 memory.writeByte(0xff0f, IF & ~(1 << i));
-                clock.c += 4;
+                clock.cycles += 4;
 
                 register.sp = (register.sp - 1) & 0xffff;
                 memory.writeByte(register.sp, (register.pc >> 8) & 0xff);
                 register.sp = (register.sp - 1) & 0xffff;
                 memory.writeByte(register.sp, register.pc & 0xff);
-                clock.c += 8;
+                clock.cycles += 8;
 
                 register.pc = 0x40 + i * 8;
-                clock.c += 8;
+                clock.cycles += 8;
 
                 break;
               }
@@ -116,14 +98,14 @@ const createCPU = (gameboy) => {
         }
 
         if (isHalted) {
-          clock.c += 4;
+          clock.cycles += 4;
 
           const IF = memory.readByte(0xff0f);
           const IE = memory.readByte(0xffff);
           if (IF & IE & 0x1f) {
             isHalted = false;
             justWokeFromHalt = true;
-            if (!IME) {
+            if (!isInterruptMasterEnabled) {
               register.pc = (register.pc - 1) & 0xffff;
             }
           }
@@ -139,19 +121,19 @@ const createCPU = (gameboy) => {
           register.F &= 0xf0;
           if (currentOpcode === 0xfb) {
             pendingInterruptEnable = true;
-            clock.c += 4;
+            clock.cycles += 4;
           } else if (pendingInterruptEnable) {
-            IME = true;
+            isInterruptMasterEnabled = true;
             pendingInterruptEnable = false;
-            clock.c += 4;
+            clock.cycles += 4;
           }
         }
 
-        const elapsed = clock.c - old;
+        const elapsed = clock.cycles - old;
         vblank = instance.gpu ? instance.gpu.update(elapsed) : false;
         timer.update(elapsed);
       }
-      clock.c = 0;
+      clock.cycles = 0;
     } catch (err) {
       stop();
       gameboy?.handleException?.(err);
@@ -159,15 +141,15 @@ const createCPU = (gameboy) => {
   };
 
   const fetchOpcode = () => {
-    const op = memory.readByte(register.pc);
+    const opcode = memory.readByte(register.pc);
     register.pc = (register.pc + 1) & 0xffff;
-    if (op === undefined || op === null) {
-      throw new Error(`Cannot read opcode at address ${register.pc.toString(16)}`);
+    if (opcode === undefined || opcode === null) {
+      throw new Error(`이 주소에 opcode를 읽을 수 없습니다. ${register.pc.toString(16)}`);
     }
-    if (!opcodeMap[op]) {
-      throw new Error(`Unknown opcode ${op.toString(16)} @ ${register.pc.toString(16)}`);
+    if (!opcodeMap[opcode]) {
+      throw new Error(`없는 opcode입니다. ${opcode.toString(16)} @ ${register.pc.toString(16)}`);
     }
-    return op;
+    return opcode;
   };
 
   const getRegister = (k) => register[k];
@@ -193,7 +175,7 @@ const createCPU = (gameboy) => {
   };
 
   const enableInterrupts = () => {
-    IME = true;
+    isInterruptMasterEnabled = true;
   };
 
   const scheduleInterruptEnable = () => {
@@ -201,7 +183,7 @@ const createCPU = (gameboy) => {
   };
 
   const disableInterrupts = () => {
-    IME = false;
+    isInterruptMasterEnabled = false;
     pendingInterruptEnable = false;
     justWokeFromHalt = false;
   };
@@ -212,33 +194,31 @@ const createCPU = (gameboy) => {
 
   const resetDivTimer = () => timer.resetDiv();
 
-  Object.assign(
+  Object.assign(instance, {
     instance,
-    Object.freeze({
-      register,
-      clock,
-      memory,
-      timer,
-      INTERRUPTS,
-      reset,
-      loadRom,
-      getRamSize,
-      getGameName,
-      run,
-      stop,
-      pause,
-      unpause,
-      getRegister,
-      setRegister,
-      halt,
-      unhalt,
-      requestInterrupt,
-      enableInterrupts,
-      scheduleInterruptEnable,
-      disableInterrupts,
-      resetDivTimer,
-    }),
-  );
+    register,
+    clock,
+    memory,
+    timer,
+    INTERRUPTS,
+    reset,
+    loadRom,
+    getRamSize,
+    getGameName,
+    run,
+    stop,
+    pause,
+    unpause,
+    getRegister,
+    setRegister,
+    halt,
+    unhalt,
+    requestInterrupt,
+    enableInterrupts,
+    scheduleInterruptEnable,
+    disableInterrupts,
+    resetDivTimer,
+  });
 
   return instance;
 };
