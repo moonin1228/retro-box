@@ -134,13 +134,35 @@ const creatememoryory = (cpu) => {
 
   const getSnapshot = () => ({
     memory: Array.from(memory),
+    mbcType,
+    mbcState: mbc ? mbc.getState() : null,
+    romData: rom ? Array.from(rom) : null,
   });
+
+  const loadSnapshot = (snapshot) => {
+    if (!snapshot) return false;
+
+    memory.set(new Uint8Array(snapshot.memory));
+
+    if (snapshot.romData) {
+      rom = new Uint8Array(snapshot.romData);
+      mbcType = snapshot.mbcType;
+      mbc = createMBC(instance, mbcType);
+      if (mbc && snapshot.mbcState) {
+        mbc.setState(snapshot.mbcState);
+      }
+    }
+
+    return true;
+  };
 
   const instance = {
     memory,
     reset,
     setRomData,
     loadRomBank,
+    getSnapshot,
+    loadSnapshot,
     vram,
     oamram,
     deviceram,
