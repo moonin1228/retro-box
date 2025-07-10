@@ -18,6 +18,14 @@ const createMBC0 = (memory) => {
     manageWrite,
     readRam: (addr) => extRam.read(addr - 0xa000),
     loadRam: (game, size) => extRam.loadRam(game, size),
+    getState: () => ({
+      extRamData: extRam.getData(),
+    }),
+    setState: (state) => {
+      if (state.extRamData) {
+        extRam.setData(state.extRamData);
+      }
+    },
   });
 };
 
@@ -73,6 +81,22 @@ const createMBC1 = (memory) => {
     manageWrite,
     readRam: (addr) => extRam.read(addr - 0xa000),
     loadRam: (game, size) => extRam.loadRam(game, size),
+    getState: () => ({
+      romBankNumber,
+      mode,
+      ramEnabled,
+      extRamData: extRam.getData(),
+    }),
+    setState: (state) => {
+      if (!state) return;
+      romBankNumber = state.romBankNumber;
+      mode = state.mode;
+      ramEnabled = state.ramEnabled;
+      if (state.extRamData) {
+        extRam.setData(state.extRamData);
+      }
+      memory.loadRomBank(romBankNumber);
+    },
   });
 };
 
@@ -117,6 +141,20 @@ const createMBC3 = (memory) => {
     manageWrite,
     readRam: (addr) => extRam.read(addr - 0xa000),
     loadRam: (game, size) => extRam.loadRam(game, size),
+    getState: () => ({
+      romBankNumber,
+      ramEnabled,
+      extRamData: extRam.getData(),
+    }),
+    setState: (state) => {
+      if (!state) return;
+      romBankNumber = state.romBankNumber;
+      ramEnabled = state.ramEnabled;
+      if (state.extRamData) {
+        extRam.setData(state.extRamData);
+      }
+      memory.loadRomBank(romBankNumber);
+    },
   });
 };
 

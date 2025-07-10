@@ -21,11 +21,11 @@ const createExtRam = () => {
       try {
         state.extRam = JSON.parse(saved);
         if (state.extRam.length !== size) {
-          console.error("Found RAM data but not matching expected size.");
+          console.error("[RAM] 램 길이가 맞지 않습니다.");
           state.extRam = new Array(size).fill(0);
         }
       } catch {
-        console.error("Corrupted RAM data; re-initializing.");
+        console.error("[RAM] 에러가 발생하여 램을 초기화합니다.");
         state.extRam = new Array(size).fill(0);
       }
     }
@@ -45,7 +45,29 @@ const createExtRam = () => {
     localStorage.setItem(storageKey(), JSON.stringify(state.extRam));
   };
 
-  return Object.freeze({ loadRam, setRamBank, write, read, save });
+  const getData = () => ({
+    ...state,
+    extRam: Array.from(state.extRam),
+  });
+
+  const setData = (data) => {
+    if (!data) return;
+    state.gameName = data.gameName;
+    state.ramSize = data.ramSize;
+    state.ramBankSize = data.ramBankSize;
+    state.ramBank = data.ramBank;
+    state.extRam = Array.from(data.extRam);
+  };
+
+  return Object.freeze({
+    loadRam,
+    setRamBank,
+    write,
+    read,
+    save,
+    getData,
+    setData,
+  });
 };
 
 export default createExtRam;

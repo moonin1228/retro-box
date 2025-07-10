@@ -6,6 +6,7 @@ import createMemory from "@/emulator/memory/memory.js";
 
 const createCPU = (gameboy) => {
   const instance = {};
+  let gameTitle = "";
   const register = {
     A: 0,
     B: 0,
@@ -38,7 +39,10 @@ const createCPU = (gameboy) => {
     Object.assign(register, INITIAL_REGISTER);
   };
 
-  const loadRom = (data) => memory.setRomData(data);
+  const loadRom = async (data) => {
+    memory.setRomData(data);
+    gameTitle = await getGameName();
+  };
 
   const getRamSize = () => [0, 2, 8, 32][memory.readByte(0x149)] * 1024 || 0;
 
