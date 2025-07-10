@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import GameCart, { createGameCartFromFile } from "@/components/GameCart.jsx";
+import SaveModal from "@/components/SaveModal.jsx";
+import useSaveStore from "@/stores/useSaveStore.js";
 
 const defaultGames = [
   {
@@ -11,6 +13,8 @@ const defaultGames = [
     romData: null,
   },
 ];
+
+const USER_GAMES_KEY = "userUploadedGames";
 
 const loadPresetRom = async (romPath) => {
   try {
@@ -28,12 +32,15 @@ const loadPresetRom = async (romPath) => {
 
 function LibraryPage() {
   const [games, setGames] = useState(defaultGames);
+  const [selectedGame, setSelectedGame] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
+  const { setCurrentSlot } = useSaveStore();
 
   useEffect(() => {
     const loadPresetRoms = async () => {
-      const updatedGames = await Promise.all(
+      const presetGames = await Promise.all(
         defaultGames.map(async (game) => {
           if (game.romPath) {
             const romData = await loadPresetRom(game.romPath);
@@ -43,7 +50,12 @@ function LibraryPage() {
         }),
       );
 
-      setGames(updatedGames);
+      const userGames = JSON.parse(localStorage.getItem(USER_GAMES_KEY) || "[]").map((game) => ({
+        ...game,
+        romData: new Uint8Array(game.romData),
+      }));
+
+      setGames([...presetGames, ...userGames]);
     };
 
     loadPresetRoms();
@@ -60,11 +72,18 @@ function LibraryPage() {
         id: Date.now(),
         title: gameData.title,
         fileName: gameData.fileName,
-        romData: gameData.romData,
+        romData: Array.from(gameData.romData),
         romPath: null,
       };
 
-      setGames((prevGames) => [...prevGames, newGame]);
+      const uploadedGames = JSON.parse(localStorage.getItem(USER_GAMES_KEY) || "[]");
+      const updatedUserGames = [...uploadedGames, newGame];
+      localStorage.setItem(USER_GAMES_KEY, JSON.stringify(updatedUserGames));
+
+      setGames((prevGames) => [
+        ...prevGames,
+        { ...newGame, romData: new Uint8Array(newGame.romData) },
+      ]);
     } catch (error) {
       console.error("파일 업로드 실패:", error);
       alert("파일 업로드에 실패했습니다.");
@@ -75,12 +94,23 @@ function LibraryPage() {
     }
   };
 
-  const handlePlayGame = (romData) => {
-    if (romData) {
-      navigate("/game", { state: { romData } });
+  const handlePlayGame = (game) => {
+    if (game.romData) {
+      setSelectedGame(game);
+      setIsModalOpen(true);
     } else {
       alert("이 게임은 플레이할 수 없습니다.");
     }
+  };
+
+  const handleSlotSelect = (slot) => {
+    setCurrentSlot(slot);
+    navigate("/game", {
+      state: {
+        romData: selectedGame.romData,
+        gameTitle: selectedGame.title,
+      },
+    });
   };
 
   return (
@@ -104,15 +134,22 @@ function LibraryPage() {
       </div>
 
       <div className="flex h-full items-center justify-center gap-6 pt-10">
-        {games.map((game, idx) => (
+        {games.map((game) => (
           <GameCart
             key={game.id}
             romData={game.romData}
             title={game.title}
-            onPlay={handlePlayGame}
+            onPlay={() => handlePlayGame(game)}
           />
         ))}
       </div>
+
+      <SaveModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        gameTitle={selectedGame?.title}
+        onSlotSelect={handleSlotSelect}
+      />
     </section>
   );
 }
