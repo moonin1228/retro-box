@@ -132,6 +132,10 @@ const creatememoryory = (cpu) => {
     memory.set(memory.subarray(source, source + 0xa0), ADDRESSES.OAM_START);
   };
 
+  const getSnapshot = () => ({
+    memory: Array.from(memory),
+  });
+
   const instance = {
     memory,
     reset,

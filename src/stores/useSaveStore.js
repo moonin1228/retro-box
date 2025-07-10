@@ -1,9 +1,9 @@
 import { create } from "zustand";
 
-const useSaveState = create((set) => ({
+const useSaveState = create({
   saveState: {},
 
-  setSaveData: (data) => localStorage.setItem("savestate1", JSON.stringify(data)),
-}));
+  setSaveData: (data) => localStorage.setItem("savestate", JSON.stringify(data.saveState)),
+});
 
 export default useSaveState;
