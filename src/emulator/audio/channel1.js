@@ -72,7 +72,7 @@ export const createChannel1 = (audioContext) => {
         audioContext.createPeriodicWave(real, imag, { disableNormalization: true }),
       );
     } catch (error) {
-      console.error("[Channel1] Error updating duty cycle:", error);
+      console.error("[Channel1] 듀티 사이클을 업데이트 하는데 실패했습니다.", error);
     }
   };
 
@@ -91,7 +91,7 @@ export const createChannel1 = (audioContext) => {
       updateVolume(state, audioContext);
       state.oscillator.start();
     } catch (error) {
-      console.error("[Channel1] Error in setupOscillator:", error);
+      console.error("[Channel1] 오실레이터를 세팅하는데 실패했습니다.", error);
       state.oscillator = null;
     }
   };

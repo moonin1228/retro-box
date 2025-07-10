@@ -10,7 +10,7 @@ const createRom = (gameboy, reader) => {
   const addReader = (romReader) => {
     romReader.setCallback((bytes) => {
       if (!validate(bytes)) {
-        gameboy.error("The file is not a valid Game Boy ROM.");
+        gameboy.error("이 파일은 유효한 파일이 아닙니다.");
         return;
       }
       data = bytes;

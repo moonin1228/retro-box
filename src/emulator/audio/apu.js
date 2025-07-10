@@ -1,23 +1,8 @@
+import { APU_CONSTANTS } from "@/constants/audioConstants.js";
 import { createChannel1 } from "@/emulator/audio/channel1.js";
 import { createChannel2 } from "@/emulator/audio/channel2.js";
 import { createChannel3 } from "@/emulator/audio/channel3.js";
 import { createChannel4 } from "@/emulator/audio/channel4.js";
-
-const APU_CONSTANTS = {
-  CPU_CLOCK: 4194304,
-  CYCLES_PER_FRAME_SEQUENCER: 8192,
-  REGISTERS: {
-    NR50: 0xff24,
-    NR51: 0xff25,
-    NR52: 0xff26,
-  },
-  INITIAL_NR52: 0x80,
-  FRAME_SEQUENCER: {
-    LENGTH_COUNTER: [0, 4],
-    SWEEP: [2, 6],
-    ENVELOPE: [7],
-  },
-};
 
 const handleChannelRegister = (channels, address, value) => {
   if (address >= 0xff10 && address <= 0xff14 && channels.channel1) {
@@ -95,7 +80,7 @@ const createApu = () => {
     try {
       return new (window.AudioContext || window.webkitAudioContext)();
     } catch (error) {
-      console.error("[APU] Failed to create AudioContext:", error);
+      console.error("[APU] audioContext 생성에 실패했습니다.", error);
       return null;
     }
   };
@@ -106,7 +91,7 @@ const createApu = () => {
 
       state.audioContext = createAudioContext();
       if (!state.audioContext) {
-        console.error("Failed to create AudioContext");
+        console.error("[APU] audioContext 생성에 실패했습니다.");
         return false;
       }
 
@@ -125,7 +110,7 @@ const createApu = () => {
       registers.NR52 |= 0x80;
       return true;
     } catch (error) {
-      console.error("Failed to initialize audio system:", error);
+      console.error("[APU] 오디오 시스템 초기화에 실패했습니다.", error);
       state.initialized = false;
       return false;
     }
@@ -150,7 +135,7 @@ const createApu = () => {
           try {
             if (channel.init) channel.init();
           } catch (error) {
-            console.error("[APU] Error resetting channel:", error);
+            console.error("[APU] 재설정 채널 에러", error);
           }
         });
       }
@@ -158,7 +143,7 @@ const createApu = () => {
       state.frameSequencer = 0;
       state.frameSequencerClock = 0;
     } catch (error) {
-      console.error("[APU] Error resetting audio system:", error);
+      console.error("[APU] APU를 재설정하는데 실패했습니다.", error);
       state.initialized = false;
     }
   }
@@ -196,7 +181,7 @@ const createApu = () => {
         channel.setPanning((value & mask.left) !== 0, (value & mask.right) !== 0);
       });
     } catch (error) {
-      console.error("[APU] Error updating panning:", error);
+      console.error("[APU] 패닝 업데이트 에러", error);
     }
   };
 
@@ -230,13 +215,16 @@ const createApu = () => {
             handleChannelRegister(state.channels, address, value);
           } catch (error) {
             console.error(
-              `[APU] Error writing to channel register ${address.toString(16)}:`,
+              `[APU] 채널 레지스터에 쓰는 것을 실패했습니다. ${address.toString(16)}:`,
               error,
             );
           }
       }
     } catch (error) {
-      console.error(`[APU] Error writing to register ${address.toString(16)}:`, error);
+      console.error(
+        `[APU] 채널 레지스터에 쓰는 것을 실패했습니다. ${address.toString(16)}:`,
+        error,
+      );
     }
   };
 
@@ -252,7 +240,10 @@ const createApu = () => {
         const channelRegValue = readChannelRegister(state.channels, address);
         if (channelRegValue !== 0xff) return channelRegValue;
       } catch (error) {
-        console.error(`[APU] Error reading from channel register ${address.toString(16)}:`, error);
+        console.error(
+          `[APU]채널 레지스터를 읽는 것을 실패했습니다. ${address.toString(16)}:`,
+          error,
+        );
         return 0xff;
       }
 
@@ -267,7 +258,10 @@ const createApu = () => {
           return 0xff;
       }
     } catch (error) {
-      console.error(`[APU] Error reading register ${address.toString(16)}:`, error);
+      console.error(
+        `[APU] 채널 레지스터를 읽는 것을 실패했습니다. ${address.toString(16)}:`,
+        error,
+      );
       return 0xff;
     }
   };
@@ -299,7 +293,7 @@ const createApu = () => {
 
       Object.values(state.channels).forEach((channel) => channel.step?.(cycles));
     } catch (error) {
-      console.error("[APU] Error in step:", error);
+      console.error("[APU] 채널 step 에러", error);
     }
   };
 
@@ -315,7 +309,7 @@ const createApu = () => {
         state.isConnected = true;
       }
     } catch (error) {
-      console.error("[APU] Error connecting audio:", error);
+      console.error("[APU] 오디오 연결에 실패했습니다.", error);
     }
   };
 
@@ -329,7 +323,7 @@ const createApu = () => {
         state.isConnected = false;
       }
     } catch (error) {
-      console.error("[APU] Error disconnecting audio:", error);
+      console.error("[APU] 오디오 연결 해제를 실패했습니다.", error);
     }
   };
 

@@ -104,7 +104,7 @@ const createMBC3 = (memory) => {
 
       case 0x6000:
       case 0x7000:
-        throw new UnimplementedException("cartridge clock not supported", false);
+        throw new UnimplementedException("", false);
 
       case 0xa000:
       case 0xb000:
@@ -144,7 +144,7 @@ const createMBC = (memory, type) => {
     case 0x1e:
       return createMBC5(memory);
     default:
-      throw new UnimplementedException("MBC type not supported");
+      throw new UnimplementedException("[MBC] 지원되지 않는 MBC 타입입니다.");
   }
 };
 

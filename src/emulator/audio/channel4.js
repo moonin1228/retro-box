@@ -84,7 +84,7 @@ export const createChannel4 = (audioContext) => {
       state.enabled = false;
       state.dacEnabled = false;
     } catch (error) {
-      console.error("[Channel4] Error in forceStop:", error);
+      console.error("[Channel4] 강제로 멈추는 것을 실패했습니다.", error);
     }
   };
 
@@ -125,7 +125,7 @@ export const createChannel4 = (audioContext) => {
 
       return true;
     } catch (error) {
-      console.error("[Channel4] Error in setupNodes:", error);
+      console.error("[Channel4] 노드를 설정하는데 실패했습니다.", error);
       disconnectNodes(state, "Channel4");
       return false;
     }
@@ -171,7 +171,7 @@ export const createChannel4 = (audioContext) => {
       updateVolume(state, audioContext);
       return true;
     } catch (error) {
-      console.error("[Channel4] Error in setupOscillator:", error);
+      console.error("[Channel4] 오실레이터를 설정하는데 실패했습니다.", error);
       forceStop();
       return false;
     }
@@ -196,7 +196,7 @@ export const createChannel4 = (audioContext) => {
         forceStop();
       }
     } catch (error) {
-      console.error("[Channel4] Error in trigger:", error);
+      console.error("[Channel4] 트리거에서 발생한 오류입니다.", error);
       forceStop();
     }
   };
@@ -224,7 +224,7 @@ export const createChannel4 = (audioContext) => {
         updateVolume(state, audioContext);
       }
     } catch (error) {
-      console.error("[Channel4] Error in step:", error);
+      console.error("[Channel4] step에서 발생한 오류입니다.", error);
       forceStop();
     }
   };
@@ -234,7 +234,7 @@ export const createChannel4 = (audioContext) => {
       state.enabled = true;
       trigger();
     } catch (error) {
-      console.error("Error in enable:", error);
+      console.error("[Channel4] enable에서 발생한 오류입니다.", error);
     }
   };
 
@@ -314,7 +314,7 @@ export const createChannel4 = (audioContext) => {
         }
       }
     } catch (error) {
-      console.error("[Channel4] Error writing to register:", error);
+      console.error("[Channel4] 레지스터를 작성하는데 발생한 오류입니다.", error);
       forceStop();
     }
   };

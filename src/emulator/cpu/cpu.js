@@ -144,10 +144,10 @@ const createCPU = (gameboy) => {
     const opcode = memory.readByte(register.pc);
     register.pc = (register.pc + 1) & 0xffff;
     if (opcode === undefined || opcode === null) {
-      throw new Error(`이 주소에 opcode를 읽을 수 없습니다. ${register.pc.toString(16)}`);
+      throw new Error(`[CPU] 이 주소에 opcode를 읽을 수 없습니다. ${register.pc.toString(16)}`);
     }
     if (!opcodeMap[opcode]) {
-      throw new Error(`없는 opcode입니다. ${opcode.toString(16)} @ ${register.pc.toString(16)}`);
+      throw new Error(`[CPU]없는 opcode입니다. ${opcode.toString(16)} ${register.pc.toString(16)}`);
     }
     return opcode;
   };
