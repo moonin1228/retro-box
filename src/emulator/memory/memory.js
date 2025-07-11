@@ -50,8 +50,8 @@ const creatememoryory = (cpu) => {
     return memory[address];
   };
 
-  const deviceram = (address, value) => {
-    if (address < ADDRESSES.DEVICE_START || address > ADDRESSES.DEVICE_END)
+  const ioRegister = (address, value) => {
+    if (address < ADDRESSES.IO_REGISTER_START || address > ADDRESSES.IO_REGISTER_END)
       throw new Error(`[MEMORY] IO 범위에 없습니다.: ${address.toString(16)}`);
     if (value === undefined) return memory[address];
     memory[address] = value;
@@ -88,6 +88,11 @@ const creatememoryory = (cpu) => {
     if (address >= 0xa000 && address < 0xc000) {
       return mbc ? mbc.readRam(address) : 0;
     }
+
+    if (address >= 0xe000 && address < 0xfe00) {
+      return memory[address - 0x2000];
+    }
+
     return memory[address];
   };
 
@@ -115,6 +120,10 @@ const creatememoryory = (cpu) => {
     if (address === 0xff00) {
       memory[address] = (memory[address] & 0x0f) | (value & 0x30);
       return;
+    }
+
+    if (address >= 0xe000 && address < 0xfe00) {
+      memory[address - 0x2000] = value;
     }
 
     memory[address] = value;
@@ -165,7 +174,7 @@ const creatememoryory = (cpu) => {
     loadSnapshot,
     vram,
     oamram,
-    deviceram,
+    ioRegister,
     readByte,
     writeByte,
     ADDRESSES,

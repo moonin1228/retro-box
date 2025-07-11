@@ -4,7 +4,7 @@ import Util from "@/emulator/util/util.js";
 
 export const createGPU = (screen, cpu) => {
   const vram = cpu.memory.vram.bind(cpu.memory);
-  const dev = cpu.memory.deviceram.bind(cpu.memory);
+  const dev = cpu.memory.ioRegister.bind(cpu.memory);
   const oam = cpu.memory.oamram.bind(cpu.memory);
 
   let clock = 0;
