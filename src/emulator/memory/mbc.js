@@ -1,36 +1,36 @@
 import UnimplementedException from "@/emulator/exception.js";
-import createExtRam from "@/emulator/memory/extram.js";
+import createExternalRam from "@/emulator/memory/externalRam.js";
 
 const makeMBC = (spec) => Object.freeze(spec);
 
 const createMBC0 = (memory) => {
-  const extRam = createExtRam();
+  const externalRam = createExternalRam();
 
   const manageWrite = (addr, value) => {
     memory.loadRomBank(value);
     if (addr >= 0xa000 && addr < 0xc000) {
-      extRam.write(addr - 0xa000, value);
-      extRam.save();
+      externalRam.write(addr - 0xa000, value);
+      externalRam.save();
     }
   };
 
   return makeMBC({
     manageWrite,
-    readRam: (addr) => extRam.read(addr - 0xa000),
-    loadRam: (game, size) => extRam.loadRam(game, size),
+    readRam: (addr) => externalRam.read(addr - 0xa000),
+    loadRam: (game, size) => externalRam.loadRam(game, size),
     getState: () => ({
-      extRamData: extRam.getData(),
+      externalRamData: externalRam.getData(),
     }),
     setState: (state) => {
-      if (state.extRamData) {
-        extRam.setData(state.extRamData);
+      if (state.externalRamData) {
+        externalRam.setData(state.externalRamData);
       }
     },
   });
 };
 
 const createMBC1 = (memory) => {
-  const extRam = createExtRam();
+  const externalRam = createExternalRam();
   let romBankNumber = 1;
   let mode = 0;
   let ramEnabled = true;
@@ -40,7 +40,7 @@ const createMBC1 = (memory) => {
       case 0x0000:
       case 0x1000:
         ramEnabled = !!(value & 0x0a);
-        if (!ramEnabled) extRam.save();
+        if (!ramEnabled) externalRam.save();
         break;
 
       case 0x2000:
@@ -60,7 +60,7 @@ const createMBC1 = (memory) => {
           romBankNumber = (romBankNumber & 0x1f) | (value << 5);
           memory.loadRomBank(romBankNumber);
         } else {
-          extRam.setRamBank(value);
+          externalRam.setRamBank(value);
         }
         break;
       }
@@ -72,28 +72,28 @@ const createMBC1 = (memory) => {
 
       case 0xa000:
       case 0xb000:
-        extRam.write(addr - 0xa000, value);
+        externalRam.write(addr - 0xa000, value);
         break;
     }
   };
 
   return makeMBC({
     manageWrite,
-    readRam: (addr) => extRam.read(addr - 0xa000),
-    loadRam: (game, size) => extRam.loadRam(game, size),
+    readRam: (addr) => externalRam.read(addr - 0xa000),
+    loadRam: (game, size) => externalRam.loadRam(game, size),
     getState: () => ({
       romBankNumber,
       mode,
       ramEnabled,
-      extRamData: extRam.getData(),
+      externalRamData: externalRam.getData(),
     }),
     setState: (state) => {
       if (!state) return;
       romBankNumber = state.romBankNumber;
       mode = state.mode;
       ramEnabled = state.ramEnabled;
-      if (state.extRamData) {
-        extRam.setData(state.extRamData);
+      if (state.externalRamData) {
+        externalRam.setData(state.externalRamData);
       }
       memory.loadRomBank(romBankNumber);
     },
@@ -101,7 +101,7 @@ const createMBC1 = (memory) => {
 };
 
 const createMBC3 = (memory) => {
-  const extRam = createExtRam();
+  const externalRam = createExternalRam();
   let romBankNumber = 1;
   let ramEnabled = true;
 
@@ -110,7 +110,7 @@ const createMBC3 = (memory) => {
       case 0x0000:
       case 0x1000:
         ramEnabled = !!(value & 0x0a);
-        if (!ramEnabled) extRam.save();
+        if (!ramEnabled) externalRam.save();
         break;
 
       case 0x2000:
@@ -123,7 +123,7 @@ const createMBC3 = (memory) => {
 
       case 0x4000:
       case 0x5000:
-        extRam.setRamBank(value);
+        externalRam.setRamBank(value);
         break;
 
       case 0x6000:
@@ -132,26 +132,26 @@ const createMBC3 = (memory) => {
 
       case 0xa000:
       case 0xb000:
-        extRam.write(addr - 0xa000, value);
+        externalRam.write(addr - 0xa000, value);
         break;
     }
   };
 
   return makeMBC({
     manageWrite,
-    readRam: (addr) => extRam.read(addr - 0xa000),
-    loadRam: (game, size) => extRam.loadRam(game, size),
+    readRam: (addr) => externalRam.read(addr - 0xa000),
+    loadRam: (game, size) => externalRam.loadRam(game, size),
     getState: () => ({
       romBankNumber,
       ramEnabled,
-      extRamData: extRam.getData(),
+      externalRamData: externalRam.getData(),
     }),
     setState: (state) => {
       if (!state) return;
       romBankNumber = state.romBankNumber;
       ramEnabled = state.ramEnabled;
-      if (state.extRamData) {
-        extRam.setData(state.extRamData);
+      if (state.externalRamData) {
+        externalRam.setData(state.externalRamData);
       }
       memory.loadRomBank(romBankNumber);
     },

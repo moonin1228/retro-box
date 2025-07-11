@@ -1,16 +1,16 @@
 export const MEMORY_SIZE = 0x10000;
 export const ROM_BANK_SIZE = 0x4000;
 
-export const ADDRESSES = Object.freeze({
+export const ADDRESSES = {
   VRAM_START: 0x8000,
   VRAM_END: 0x9fff,
   EXTERNAL_RAM_START: 0xa000,
   EXTERNAL_RAM_END: 0xbfff,
   OAM_START: 0xfe00,
   OAM_END: 0xfe9f,
-  DEVICE_START: 0xff00,
-  DEVICE_END: 0xff7f,
-});
+  IO_REGISTER_START: 0xff00,
+  IO_REGISTER_END: 0xff7f,
+};
 
 export const APU_REGISTER_MASK = [
   0x80, 0x3f, 0x00, 0xff, 0xbf, 0xff, 0x3f, 0x00, 0xff, 0xbf, 0x7f, 0xff, 0x9f, 0xff, 0xbf, 0xff,

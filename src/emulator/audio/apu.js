@@ -148,6 +148,25 @@ const createApu = () => {
     }
   }
 
+  const clearBuffer = () => {
+    if (!state.initialized || !state.channels) return;
+
+    try {
+      Object.values(state.channels).forEach((channel) => {
+        if (channel.clearBuffer) {
+          channel.clearBuffer();
+        } else if (channel.disable && channel.init) {
+          channel.disable();
+          channel.init();
+        }
+      });
+
+      state.frameSequencerClock = 0;
+    } catch (error) {
+      console.error("[APU] 버퍼 초기화 중 오류 발생:", error);
+    }
+  };
+
   const updateMasterVolume = () => {
     if (!state.initialized) return;
 
@@ -334,6 +353,7 @@ const createApu = () => {
     step,
     connect,
     disconnect,
+    clearBuffer,
     getMasterVolume: () => state.masterVolume,
   };
 };

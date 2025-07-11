@@ -1,13 +1,13 @@
-const createExtRam = () => {
+const createExternalRam = () => {
   const state = {
     gameName: "",
-    extRam: [],
+    externalRam: [],
     ramSize: 0,
     ramBankSize: 0,
     ramBank: 0,
   };
 
-  const storageKey = () => `${state.gameName}_EXTRAM`;
+  const storageKey = () => `${state.gameName}_EXTERNALAM`;
 
   const loadRam = (gameName, size) => {
     state.gameName = gameName;
@@ -16,17 +16,17 @@ const createExtRam = () => {
 
     const saved = localStorage.getItem(storageKey());
     if (saved === null) {
-      state.extRam = new Array(size).fill(0);
+      state.externalRam = new Array(size).fill(0);
     } else {
       try {
-        state.extRam = JSON.parse(saved);
-        if (state.extRam.length !== size) {
+        state.externalRam = JSON.parse(saved);
+        if (state.externalRam.length !== size) {
           console.error("[RAM] 램 길이가 맞지 않습니다.");
-          state.extRam = new Array(size).fill(0);
+          state.externalRam = new Array(size).fill(0);
         }
       } catch {
         console.error("[RAM] 에러가 발생하여 램을 초기화합니다.");
-        state.extRam = new Array(size).fill(0);
+        state.externalRam = new Array(size).fill(0);
       }
     }
   };
@@ -36,18 +36,18 @@ const createExtRam = () => {
   };
 
   const write = (offset, value) => {
-    state.extRam[state.ramBank * 8192 + offset] = value & 0xff;
+    state.externalRam[state.ramBank * 8192 + offset] = value & 0xff;
   };
 
-  const read = (offset) => state.extRam[state.ramBank * 8192 + offset] | 0;
+  const read = (offset) => state.externalRam[state.ramBank * 8192 + offset] | 0;
 
   const save = () => {
-    localStorage.setItem(storageKey(), JSON.stringify(state.extRam));
+    localStorage.setItem(storageKey(), JSON.stringify(state.externalRam));
   };
 
   const getData = () => ({
     ...state,
-    extRam: Array.from(state.extRam),
+    externalRam: Array.from(state.externalRam),
   });
 
   const setData = (data) => {
@@ -56,7 +56,7 @@ const createExtRam = () => {
     state.ramSize = data.ramSize;
     state.ramBankSize = data.ramBankSize;
     state.ramBank = data.ramBank;
-    state.extRam = Array.from(data.extRam);
+    state.externalRam = Array.from(data.externalRam);
   };
 
   return Object.freeze({
@@ -70,4 +70,4 @@ const createExtRam = () => {
   });
 };
 
-export default createExtRam;
+export default createExternalRam;
