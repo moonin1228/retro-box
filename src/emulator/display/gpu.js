@@ -1,30 +1,6 @@
+import { OAM_END, OAM_START, REG, TILEMAP } from "@/constants/gpuConstants.js";
 import { physics } from "@/emulator/display/screen.js";
 import Util from "@/emulator/util/util.js";
-
-const REG = {
-  LCDC: 0xff40,
-  STAT: 0xff41,
-  SCY: 0xff42,
-  SCX: 0xff43,
-  LY: 0xff44,
-  LYC: 0xff45,
-  BGP: 0xff47,
-  OBP0: 0xff48,
-  OBP1: 0xff49,
-  WY: 0xff4a,
-  WX: 0xff4b,
-};
-
-const OAM_START = 0xfe00;
-const OAM_END = 0xfe9f;
-
-const TILEMAP = Object.freeze({
-  HEIGHT: 32,
-  WIDTH: 32,
-  START_0: 0x9800,
-  START_1: 0x9c00,
-  LENGTH: 0x0400,
-});
 
 export const createGPU = (screen, cpu) => {
   const vram = cpu.memory.vram.bind(cpu.memory);

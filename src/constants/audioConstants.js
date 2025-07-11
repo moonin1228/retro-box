@@ -1,0 +1,15 @@
+export const APU_CONSTANTS = {
+  CPU_CLOCK: 4194304,
+  CYCLES_PER_FRAME_SEQUENCER: 8192,
+  REGISTERS: {
+    NR50: 0xff24,
+    NR51: 0xff25,
+    NR52: 0xff26,
+  },
+  INITIAL_NR52: 0x80,
+  FRAME_SEQUENCER: {
+    LENGTH_COUNTER: [0, 4],
+    SWEEP: [2, 6],
+    ENVELOPE: [7],
+  },
+};

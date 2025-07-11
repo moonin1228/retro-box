@@ -6,6 +6,7 @@ import createMemory from "@/emulator/memory/memory.js";
 
 const createCPU = (gameboy) => {
   const instance = {};
+  let gameTitle = "";
   const register = {
     A: 0,
     B: 0,
@@ -38,7 +39,10 @@ const createCPU = (gameboy) => {
     Object.assign(register, INITIAL_REGISTER);
   };
 
-  const loadRom = (data) => memory.setRomData(data);
+  const loadRom = async (data) => {
+    memory.setRomData(data);
+    gameTitle = await getGameName();
+  };
 
   const getRamSize = () => [0, 2, 8, 32][memory.readByte(0x149)] * 1024 || 0;
 
@@ -144,10 +148,10 @@ const createCPU = (gameboy) => {
     const opcode = memory.readByte(register.pc);
     register.pc = (register.pc + 1) & 0xffff;
     if (opcode === undefined || opcode === null) {
-      throw new Error(`이 주소에 opcode를 읽을 수 없습니다. ${register.pc.toString(16)}`);
+      throw new Error(`[CPU] 이 주소에 opcode를 읽을 수 없습니다. ${register.pc.toString(16)}`);
     }
     if (!opcodeMap[opcode]) {
-      throw new Error(`없는 opcode입니다. ${opcode.toString(16)} @ ${register.pc.toString(16)}`);
+      throw new Error(`[CPU]없는 opcode입니다. ${opcode.toString(16)} ${register.pc.toString(16)}`);
     }
     return opcode;
   };

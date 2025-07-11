@@ -87,7 +87,7 @@ export const createChannel3 = (audioContext) => {
       });
       state.oscillator.setPeriodicWave(wave);
     } catch (e) {
-      console.error("Error updating wave table:", e);
+      console.error("[Channel3] 웨이브 테이블을 업데이트 하는데 실패했습니다.", e);
     }
   };
 

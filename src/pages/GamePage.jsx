@@ -1,28 +1,28 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { IoMdArrowRoundBack, IoMdSettings } from "react-icons/io";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import GameBoyEmulator from "@/components/GameBoyEmulator.jsx";
-import SettingsPanel from "@/components/SettingsPanel.jsx";
 
 function GamePage() {
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
   const romData = location.state?.romData;
+  const gameTitle = location.state?.gameTitle;
 
   useEffect(() => {
-    if (!romData) {
-      console.warn("롬 데이터가 없습니다. 라이브러리 페이지로 이동합니다.");
+    if (!romData || !gameTitle) {
+      console.warn("게임 데이터가 없습니다. 라이브러리 페이지로 이동합니다.");
       navigate("/library");
     }
-  }, [romData, navigate]);
+  }, [romData, gameTitle, navigate]);
 
   const handleBackToLibrary = () => {
     navigate("/library");
   };
 
-  if (!romData) {
+  if (!romData || !gameTitle) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
@@ -47,23 +47,12 @@ function GamePage() {
 
         <button
           onClick={handleBackToLibrary}
-          className="absolute top-4 left-4 rounded-full bg-gray-800 p-2 text-white hover:bg-gray-700"
-          title="라이브러리로 돌아가기"
+          className="absolute top-4 left-4 flex items-center gap-2 rounded-lg bg-gray-800/80 px-4 py-2 text-white transition-colors hover:bg-gray-700/80"
           type="button"
         >
-          라이브러리로
+          <IoMdArrowRoundBack size={20} />
+          <span>라이브러리</span>
         </button>
-
-        <button
-          onClick={() => setIsSettingsOpen(true)}
-          className="absolute top-4 right-4 rounded-full bg-gray-800 p-2 text-white hover:bg-gray-700"
-          title="설정 열기"
-          type="button"
-        >
-          설정
-        </button>
-
-        <SettingsPanel isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
       </div>
     </div>
   );

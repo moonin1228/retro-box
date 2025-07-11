@@ -1,4 +1,5 @@
 import { extractGameTitle } from "@/emulator/util/romUtils.js";
+import { loadRomFromCache, saveRomToCache } from "@/stores/useRomCacheStore.js";
 
 function GameCart({ romData, title, onPlay }) {
   const gameTitle = (romData && extractGameTitle(romData)) || title || "Unknown Game";
@@ -31,11 +32,25 @@ function GameCart({ romData, title, onPlay }) {
 }
 
 export const createGameCartFromFile = async (file) => {
+  const cachedRom = loadRomFromCache(file.name);
+  if (cachedRom) {
+    const title = extractGameTitle(cachedRom);
+
+    return {
+      romData: cachedRom,
+      title: title || file.name,
+      fileName: file.name,
+      fromCache: true,
+    };
+  }
+
   try {
     const arrayBuffer = await file.arrayBuffer();
 
     const romData = new Uint8Array(arrayBuffer);
     const title = extractGameTitle(romData);
+
+    saveRomToCache(file.name, romData);
 
     return {
       romData,

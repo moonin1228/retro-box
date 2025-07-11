@@ -40,24 +40,24 @@ const creatememoryory = (cpu) => {
 
   const vram = (address) => {
     if (address < ADDRESSES.VRAM_START || address > ADDRESSES.VRAM_END)
-      throw new Error(`VRAM out-of-bounds: ${address.toString(16)}`);
+      throw new Error(`[MEMORY] VRAM 범위에 없습니다.: ${address.toString(16)}`);
     return memory[address];
   };
 
   const oamram = (address) => {
     if (address < ADDRESSES.OAM_START || address > ADDRESSES.OAM_END)
-      throw new Error(`OAM out-of-bounds: ${address.toString(16)}`);
+      throw new Error(`[MEMORY] OAM 범위에 없습니다.: ${address.toString(16)}`);
     return memory[address];
   };
 
   const deviceram = (address, value) => {
     if (address < ADDRESSES.DEVICE_START || address > ADDRESSES.DEVICE_END)
-      throw new Error(`IO out-of-bounds: ${address.toString(16)}`);
+      throw new Error(`[MEMORY] IO 범위에 없습니다.: ${address.toString(16)}`);
     if (value === undefined) return memory[address];
     memory[address] = value;
   };
 
-  const rb = (address) => {
+  const readByte = (address) => {
     if (address === 0xff00) {
       const selector = memory[address] & 0x30;
       let inputBits = 0x0f;
@@ -103,7 +103,10 @@ const creatememoryory = (cpu) => {
         try {
           cpu.apu.writeRegister(address, value);
         } catch (error) {
-          console.error(`Error writing to APU register ${address.toString(16)}:`, error);
+          console.error(
+            `[MEMORY]APU 레지스터에 쓰는 것을 실패했습니다. ${address.toString(16)}:`,
+            error,
+          );
         }
       }
       return;
@@ -129,15 +132,41 @@ const creatememoryory = (cpu) => {
     memory.set(memory.subarray(source, source + 0xa0), ADDRESSES.OAM_START);
   };
 
+  const getSnapshot = () => ({
+    memory: Array.from(memory),
+    mbcType,
+    mbcState: mbc ? mbc.getState() : null,
+    romData: rom ? Array.from(rom) : null,
+  });
+
+  const loadSnapshot = (snapshot) => {
+    if (!snapshot) return false;
+
+    memory.set(new Uint8Array(snapshot.memory));
+
+    if (snapshot.romData) {
+      rom = new Uint8Array(snapshot.romData);
+      mbcType = snapshot.mbcType;
+      mbc = createMBC(instance, mbcType);
+      if (mbc && snapshot.mbcState) {
+        mbc.setState(snapshot.mbcState);
+      }
+    }
+
+    return true;
+  };
+
   const instance = {
     memory,
     reset,
     setRomData,
     loadRomBank,
+    getSnapshot,
+    loadSnapshot,
     vram,
     oamram,
     deviceram,
-    readByte: rb,
+    readByte,
     writeByte,
     ADDRESSES,
   };
