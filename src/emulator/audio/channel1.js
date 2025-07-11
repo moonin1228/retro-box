@@ -228,6 +228,26 @@ export const createChannel1 = (audioContext) => {
     }
   };
 
+  const clearBuffer = () => {
+    try {
+      if (state.oscillator) {
+        state.oscillator.stop();
+        state.oscillator.disconnect();
+        state.oscillator = null;
+      }
+
+      state.lengthCounter = 0;
+      state.envelopeTimer = 0;
+      state.frequency = 0;
+      state.envelopeVolume = 0;
+      state.enabled = false;
+
+      setupOscillator();
+    } catch (error) {
+      console.error("[Channel 1] 버퍼 초기화 중 오류 발생:", error);
+    }
+  };
+
   return {
     writeRegister,
     readRegister,
@@ -246,5 +266,6 @@ export const createChannel1 = (audioContext) => {
     updateLength: () => updateLength(state),
     updateSweep,
     updateEnvelope: () => updateEnvelope(state, audioContext),
+    clearBuffer,
   };
 };

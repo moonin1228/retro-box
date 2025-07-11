@@ -61,7 +61,6 @@ function GameBoyEmulator({ romData, onEmulatorReady, gameTitle }) {
 
     return () => {
       if (gameBoyRef.current) {
-        gameBoyRef.current.resetAudio();
         gameBoyRef.current.pause(true);
       }
       if (volumeUpdateRef.current) {
@@ -78,8 +77,12 @@ function GameBoyEmulator({ romData, onEmulatorReady, gameTitle }) {
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.hidden && gameBoyRef.current) {
-        gameBoyRef.current.resetAudio();
+      if (!gameBoyRef.current) return;
+
+      if (document.hidden) {
+        gameBoyRef.current.pause(true);
+      } else if (!isGamePause) {
+        gameBoyRef.current.pause(false);
       }
     };
 
@@ -87,7 +90,7 @@ function GameBoyEmulator({ romData, onEmulatorReady, gameTitle }) {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
+  }, [isGamePause]);
 
   useEffect(() => {
     if (gameBoyRef.current?.cpu) {

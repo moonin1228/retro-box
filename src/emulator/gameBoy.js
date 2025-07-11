@@ -109,7 +109,10 @@ const createGameBoy = (canvas, options = {}) => {
     if (flag) {
       setStatus("Game Paused :");
       cpu.pause();
-      resetAudio();
+      if (apu) {
+        apu.clearBuffer();
+        apu.disconnect();
+      }
     } else {
       setStatus("Game Running :");
       cpu.unpause();
