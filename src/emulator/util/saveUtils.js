@@ -20,7 +20,6 @@ export const saveCurrentState = (cpu) => {
 export const loadCurrentState = (cpu) => {
   const gameTitle = cpu.getGameName?.() || "UnknownGame";
   const currentSlot = useSaveStore.getState().currentSlot;
-
   const snapshot = useSaveStore.getState().loadState(gameTitle, currentSlot);
 
   Object.assign(cpu.register, snapshot.cpu.register);

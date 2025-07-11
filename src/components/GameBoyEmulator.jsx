@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FaDownload, FaPause, FaPlay } from "react-icons/fa";
-import { IoIosSave } from "react-icons/io";
+import { IoIosSave, IoMdSettings } from "react-icons/io";
 import { Tooltip } from "react-tooltip";
 
+import SettingsPanel from "@/components/SettingsPanel.jsx";
 import createGameBoy from "@/emulator/gameBoy.js";
 import { loadCurrentState, saveCurrentState } from "@/emulator/util/saveUtils.js";
 import useGameInput from "@/hooks/useGameInput.jsx";
@@ -10,10 +11,11 @@ import useEmulatorSettings from "@/stores/useEmulatorSettings.js";
 import useGameInputStore from "@/stores/useGameInputStore.js";
 import useGameStatus from "@/stores/useGameStatus.js";
 
-function GameBoyEmulator({ romData }) {
+function GameBoyEmulator({ romData, onEmulatorReady, gameTitle }) {
   const canvasRef = useRef(null);
   const gameBoyRef = useRef(null);
   const { isGamePause, togglePause } = useGameStatus();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { volume } = useEmulatorSettings();
   const volumeUpdateRef = useRef(null);
 
@@ -50,9 +52,12 @@ function GameBoyEmulator({ romData }) {
 
     const gameBoy = createGameBoy(canvasRef.current, {
       zoom: 6,
-      romReaders: romData ? [] : undefined,
     });
     gameBoyRef.current = gameBoy;
+
+    if (onEmulatorReady) {
+      onEmulatorReady(gameBoy);
+    }
 
     return () => {
       if (gameBoyRef.current) {
@@ -63,7 +68,7 @@ function GameBoyEmulator({ romData }) {
         clearInterval(volumeUpdateRef.current);
       }
     };
-  }, [romData]);
+  }, [romData, onEmulatorReady]);
 
   useEffect(() => {
     if (romData && gameBoyRef.current) {
@@ -119,6 +124,22 @@ function GameBoyEmulator({ romData }) {
         />
       </div>
 
+      <button
+        onClick={() => setIsSettingsOpen(true)}
+        className="absolute top-4 right-4 flex items-center gap-2 rounded-lg bg-gray-800/80 px-4 py-2 text-white transition-colors hover:bg-gray-700/80"
+        type="button"
+      >
+        <IoMdSettings size={20} />
+        <span>설정</span>
+      </button>
+
+      <SettingsPanel
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        gameBoyRef={gameBoyRef}
+        gameTitle={gameTitle}
+      />
+
       <div className="-mt-1 flex gap-5">
         <button
           type="button"
@@ -129,6 +150,7 @@ function GameBoyEmulator({ romData }) {
         >
           <IoIosSave className="text-3xl" />
         </button>
+
         <button
           onClick={handleTogglePause}
           type="button"

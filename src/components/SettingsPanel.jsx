@@ -3,6 +3,7 @@ import { FiSave, FiVolume2, FiX } from "react-icons/fi";
 import { IoGameControllerOutline } from "react-icons/io5";
 
 import BUTTON_BITS from "@/constants/buttonBits.js";
+import { loadCurrentState, saveCurrentState } from "@/emulator/util/saveUtils.js";
 import useEmulatorSettings from "@/stores/useEmulatorSettings.js";
 import useGameInputStore from "@/stores/useGameInputStore.js";
 
@@ -46,7 +47,7 @@ const formatKeyCode = (keyCode) => {
   return formatted;
 };
 
-function SettingsPanel({ onClose, isOpen }) {
+function SettingsPanel({ onClose, isOpen, gameBoyRef }) {
   const { volume, setVolume } = useEmulatorSettings();
   const { keyMap, setKey, resetKeys } = useGameInputStore();
   const [selectedButton, setSelectedButton] = useState(null);
@@ -74,6 +75,18 @@ function SettingsPanel({ onClose, isOpen }) {
 
   const handleResetKeys = () => {
     resetKeys();
+  };
+
+  const handleSave = () => {
+    if (gameBoyRef.current?.cpu) {
+      saveCurrentState(gameBoyRef.current.cpu);
+    }
+  };
+
+  const handleLoad = () => {
+    if (gameBoyRef.current?.cpu) {
+      loadCurrentState(gameBoyRef.current.cpu);
+    }
   };
 
   return (
@@ -179,6 +192,7 @@ function SettingsPanel({ onClose, isOpen }) {
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
+              onClick={handleSave}
               className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-xs transition-all hover:bg-white/10"
             >
               저장하기
@@ -186,6 +200,7 @@ function SettingsPanel({ onClose, isOpen }) {
             <button
               type="button"
               className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-xs transition-all hover:bg-white/10"
+              onClick={handleLoad}
             >
               불러오기
             </button>

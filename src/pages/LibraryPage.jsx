@@ -2,8 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import GameCart, { createGameCartFromFile } from "@/components/GameCart.jsx";
-import SaveModal from "@/components/SaveModal.jsx";
-import useSaveStore from "@/stores/useSaveStore.js";
 
 const defaultGames = [
   {
@@ -32,11 +30,8 @@ const loadPresetRom = async (romPath) => {
 
 function LibraryPage() {
   const [games, setGames] = useState(defaultGames);
-  const [selectedGame, setSelectedGame] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
-  const { setCurrentSlot } = useSaveStore();
 
   useEffect(() => {
     const loadPresetRoms = async () => {
@@ -96,21 +91,15 @@ function LibraryPage() {
 
   const handlePlayGame = (game) => {
     if (game.romData) {
-      setSelectedGame(game);
-      setIsModalOpen(true);
+      navigate("/game", {
+        state: {
+          romData: game.romData,
+          gameTitle: game.title,
+        },
+      });
     } else {
       alert("이 게임은 플레이할 수 없습니다.");
     }
-  };
-
-  const handleSlotSelect = (slot) => {
-    setCurrentSlot(slot);
-    navigate("/game", {
-      state: {
-        romData: selectedGame.romData,
-        gameTitle: selectedGame.title,
-      },
-    });
   };
 
   return (
@@ -143,13 +132,6 @@ function LibraryPage() {
           />
         ))}
       </div>
-
-      <SaveModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        gameTitle={selectedGame?.title}
-        onSlotSelect={handleSlotSelect}
-      />
     </section>
   );
 }
