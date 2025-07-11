@@ -183,29 +183,6 @@ function SettingsPanel({ onClose, isOpen, gameBoyRef }) {
             ))}
           </div>
         </div>
-
-        <section className="space-y-4 rounded-lg border border-white/20 bg-white/5 p-4 backdrop-blur-sm">
-          <div className="flex items-center gap-3 text-sm">
-            <FiSave className="h-4 w-4" />
-            <span>세이브 파일</span>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              type="button"
-              onClick={handleSave}
-              className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-xs transition-all hover:bg-white/10"
-            >
-              저장하기
-            </button>
-            <button
-              type="button"
-              className="rounded-lg border border-white/20 bg-white/5 px-4 py-2 text-xs transition-all hover:bg-white/10"
-              onClick={handleLoad}
-            >
-              불러오기
-            </button>
-          </div>
-        </section>
       </div>
     </div>
   );
