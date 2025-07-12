@@ -1,41 +1,69 @@
+import { FaRegTrashAlt } from "react-icons/fa";
+
 import { extractGameTitle } from "@/emulator/util/romUtils.js";
 import { loadRomFromCache, saveRomToCache } from "@/stores/useRomCacheStore.js";
 
-function GameCart({ romData, title, onPlay }) {
+function GameCart({ romData, title, onPlay, onDelete, isUserGame = false }) {
   const gameTitle = (romData && extractGameTitle(romData)) || title || "Unknown Game";
 
   const handlePlay = () => {
-    if (onPlay && romData) {
-      onPlay(romData);
-    }
+    if (onPlay && romData) onPlay(romData);
+  };
+
+  const handleDelete = (e) => {
+    e.stopPropagation();
+    if (onDelete) onDelete();
   };
 
   return (
-    <button
-      className="m-2 flex h-48 w-44 cursor-pointer flex-col items-center rounded-lg border-2 border-gray-300 bg-gray-100 p-4 transition-transform duration-200 hover:scale-105"
+    <div
+      className="group relative h-72 w-56 cursor-pointer transition-transform duration-200 select-none hover:scale-105 hover:shadow-2xl"
       onClick={handlePlay}
-      type="button"
+      tabIndex={0}
+      role="button"
     >
-      <div className="mb-2 flex h-28 w-36 flex-col items-center justify-center rounded border-2 border-gray-500 bg-gradient-to-b from-gray-200 to-gray-400 p-2.5">
-        <div className="mb-2.5 text-center text-sm leading-tight font-bold break-words text-gray-700">
+      <img
+        src="/images/cart.png"
+        alt="게임팩"
+        className="h-full w-full object-contain drop-shadow-lg"
+        draggable={false}
+      />
+
+      {isUserGame && onDelete && (
+        <button
+          onClick={handleDelete}
+          className="absolute top-2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-red-500 text-white opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100 hover:bg-red-600"
+          type="button"
+          title="게임 삭제"
+        >
+          <FaRegTrashAlt size={16} />
+        </button>
+      )}
+
+      <div className="font-retro absolute top-24 left-29 z-5 flex h-23 w-31 -translate-x-1/2 flex-col items-center justify-center rounded-lg border border-gray-500 bg-black/40 py-1 text-center text-xs font-black tracking-widest text-white uppercase shadow-lg drop-shadow">
+        <span className="rounded bg-white/40 px-0.5 py-0.5 [text-shadow:_2px_2px_0_#222,4px_4px_0_#000]">
           {gameTitle}
+        </span>
+      </div>
+
+      <div className="absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 justify-center">
+        <div className="group relative">
+          <div className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+            <div className="rounded bg-gray-800 px-2 py-1 text-xs whitespace-nowrap text-white shadow-lg">
+              {romData ? "플레이 가능" : "롬 파일 필요"}
+            </div>
+            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+          </div>
         </div>
-
-        <div className="font-mono text-xs text-gray-500">GAME BOY</div>
       </div>
-
-      <div className="text-center text-xs text-gray-500">
-        {romData ? "플레이 가능" : "롬 파일 필요"}
-      </div>
-    </button>
+    </div>
   );
 }
 
 export const createGameCartFromFile = async (file) => {
-  const cachedRom = loadRomFromCache(file.name);
+  const cachedRom = await loadRomFromCache(file.name);
   if (cachedRom) {
     const title = extractGameTitle(cachedRom);
-
     return {
       romData: cachedRom,
       title: title || file.name,
@@ -43,15 +71,14 @@ export const createGameCartFromFile = async (file) => {
       fromCache: true,
     };
   }
-
   try {
     const arrayBuffer = await file.arrayBuffer();
-
     const romData = new Uint8Array(arrayBuffer);
     const title = extractGameTitle(romData);
-
-    saveRomToCache(file.name, romData);
-
+    const cacheSaved = await saveRomToCache(file.name, romData);
+    if (!cacheSaved) {
+      console.warn("ROM 캐시 저장 실패, 게임은 정상 추가됩니다.");
+    }
     return {
       romData,
       title: title || file.name,
