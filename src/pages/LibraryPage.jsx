@@ -29,12 +29,19 @@ const loadPresetRom = async (romPath) => {
   }
 };
 
+function PageLoader() {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+      <div className="h-16 w-16 animate-spin rounded-full border-4 border-purple-400 border-t-transparent" />
+    </div>
+  );
+}
+
 function LibraryPage() {
   const [games, setGames] = useState([]);
   const [filteredGames, setFilteredGames] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const [isDragging, setIsDragging] = useState(false);
   const [toast, setToast] = useState({ isVisible: false, message: "", type: "success" });
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
@@ -162,6 +169,7 @@ function LibraryPage() {
 
   return (
     <section className="relative min-h-screen w-full bg-[url('/images/mainBG.png')] bg-cover bg-center bg-no-repeat select-none">
+      {isLoading && <PageLoader />}
       <Toast
         isVisible={toast.isVisible}
         message={toast.message}
