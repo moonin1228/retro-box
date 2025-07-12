@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import GameCart, { createGameCartFromFile } from "@/components/GameCart.jsx";
+import Toast from "@/components/Toast.jsx";
 
 const defaultGames = [
   {
@@ -29,35 +30,56 @@ const loadPresetRom = async (romPath) => {
 };
 
 function LibraryPage() {
-  const [games, setGames] = useState(defaultGames);
+  const [games, setGames] = useState([]);
+  const [filteredGames, setFilteredGames] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
+  const [toast, setToast] = useState({ isVisible: false, message: "", type: "success" });
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const loadPresetRoms = async () => {
-      const presetGames = await Promise.all(
-        defaultGames.map(async (game) => {
-          if (game.romPath) {
-            const romData = await loadPresetRom(game.romPath);
-            return { ...game, romData };
-          }
-          return game;
-        }),
-      );
+      setIsLoading(true);
+      try {
+        const presetGames = await Promise.all(
+          defaultGames.map(async (game) => {
+            if (game.romPath) {
+              const romData = await loadPresetRom(game.romPath);
+              return { ...game, romData, isUserGame: false };
+            }
+            return { ...game, isUserGame: false };
+          }),
+        );
 
-      const userGames = JSON.parse(localStorage.getItem(USER_GAMES_KEY) || "[]").map((game) => ({
-        ...game,
-        romData: new Uint8Array(game.romData),
-      }));
+        const userGames = JSON.parse(localStorage.getItem(USER_GAMES_KEY) || "[]").map((game) => ({
+          ...game,
+          romData: new Uint8Array(game.romData),
+          isUserGame: true,
+        }));
 
-      setGames([...presetGames, ...userGames]);
+        const allGames = [...presetGames, ...userGames];
+        setGames(allGames);
+        setFilteredGames(allGames);
+      } catch (error) {
+        console.error("게임 로드 실패:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadPresetRoms();
   }, []);
 
-  const handleFileUpload = async (event) => {
-    const file = event.target.files?.[0];
+  useEffect(() => {
+    const filtered = games.filter((game) =>
+      game.title.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
+    setFilteredGames(filtered);
+  }, [games, searchTerm]);
+
+  const handleFileUpload = async (file) => {
     if (!file) return;
 
     try {
@@ -69,6 +91,7 @@ function LibraryPage() {
         fileName: gameData.fileName,
         romData: Array.from(gameData.romData),
         romPath: null,
+        isUserGame: true,
       };
 
       const uploadedGames = JSON.parse(localStorage.getItem(USER_GAMES_KEY) || "[]");
@@ -79,13 +102,28 @@ function LibraryPage() {
         ...prevGames,
         { ...newGame, romData: new Uint8Array(newGame.romData) },
       ]);
+
+      setToast({
+        isVisible: true,
+        message: `${gameData.title} 게임이 추가되었습니다!`,
+        type: "success",
+      });
     } catch (error) {
-      console.error("파일 업로드 실패:", error);
-      alert("파일 업로드에 실패했습니다.");
-    } finally {
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      setToast({
+        isVisible: true,
+        message: "파일 업로드에 실패했습니다.",
+        type: "error",
+      });
+    }
+  };
+
+  const handleFileInputChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      await handleFileUpload(file);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -98,39 +136,103 @@ function LibraryPage() {
         },
       });
     } else {
-      alert("이 게임은 플레이할 수 없습니다.");
+      setToast({
+        isVisible: true,
+        message: "게임을 플레이 할 수 없습니다.",
+        type: "error",
+      });
     }
   };
 
+  const handleDeleteGame = (gameId) => {
+    const gameToDelete = games.find((game) => game.id === gameId);
+    const updatedGames = games.filter((game) => game.id !== gameId);
+    setGames(updatedGames);
+
+    const userGames = JSON.parse(localStorage.getItem(USER_GAMES_KEY) || "[]");
+    const updatedUserGames = userGames.filter((game) => game.id !== gameId);
+    localStorage.setItem(USER_GAMES_KEY, JSON.stringify(updatedUserGames));
+
+    setToast({
+      isVisible: true,
+      message: `${gameToDelete?.title || "게임"}이 삭제되었습니다.`,
+      type: "warning",
+    });
+  };
+
   return (
-    <section className="relative h-screen w-full bg-[url('/images/mainBG.png')] bg-cover bg-center bg-no-repeat select-none">
+    <section className="relative min-h-screen w-full bg-[url('/images/mainBG.png')] bg-cover bg-center bg-no-repeat select-none">
+      <Toast
+        isVisible={toast.isVisible}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast({ ...toast, isVisible: false })}
+      />
+
       <input
         id="file"
         ref={fileInputRef}
         type="file"
         accept=".gb,.gbc"
-        onChange={handleFileUpload}
+        onChange={handleFileInputChange}
         className="hidden"
       />
-      <div className="fixed top-4 left-1/2 z-30 -translate-x-1/2">
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 shadow-md hover:bg-gray-50 focus:ring-2 focus:outline-none"
-          type="button"
-        >
-          📁 게임 파일 추가
-        </button>
+
+      <div className="sticky top-0 z-30 border-b border-white/20 bg-black/20 backdrop-blur-sm">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+            <h1 className="text-2xl font-bold text-white">게임 라이브러리</h1>
+
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="게임 검색..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-64 rounded-lg border border-white/20 bg-white/90 px-4 py-2 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+                <span className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-400">🔍</span>
+              </div>
+
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 rounded-lg border border-violet-500 bg-purple-500 to-purple-700 px-5 py-2 font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:brightness-110 active:scale-95"
+                type="button"
+              >
+                <span className="text-lg">📁</span>
+                게임 추가
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="flex h-full items-center justify-center gap-6 pt-10">
-        {games.map((game) => (
-          <GameCart
-            key={game.id}
-            romData={game.romData}
-            title={game.title}
-            onPlay={() => handlePlayGame(game)}
-          />
-        ))}
+      <div className="container mx-auto px-6 py-8">
+        {filteredGames.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-white">
+            <div className="mb-4 text-6xl">🎮</div>
+            <h2 className="mb-2 text-2xl font-bold">
+              {searchTerm ? "검색 결과가 없습니다" : "게임이 없습니다"}
+            </h2>
+            <p className="mb-6 text-white/70">
+              {searchTerm ? "다른 검색어를 시도해보세요" : "게임 파일을 추가해보세요"}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+            {filteredGames.map((game) => (
+              <GameCart
+                key={game.id}
+                romData={game.romData}
+                title={game.title}
+                onPlay={() => handlePlayGame(game)}
+                onDelete={game.isUserGame ? () => handleDeleteGame(game.id) : null}
+                isUserGame={game.isUserGame}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

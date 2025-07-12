@@ -12,3 +12,25 @@
     image-rendering: crisp-edges;
   }
 }
+
+@layer utilities {
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+
+  .font-retro {
+    font-family: "Press Start 2P", "Courier New", Courier, monospace;
+    letter-spacing: 0.5px;
+  }
+}
