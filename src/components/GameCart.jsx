@@ -16,10 +16,11 @@ function GameCart({ romData, title, onPlay, onDelete, isUserGame = false }) {
   };
 
   return (
-    <button
+    <div
       className="group relative h-72 w-56 cursor-pointer transition-transform duration-200 select-none hover:scale-105 hover:shadow-2xl"
       onClick={handlePlay}
-      type="button"
+      tabIndex={0}
+      role="button"
     >
       <img
         src="/images/cart.png"
@@ -55,7 +56,7 @@ function GameCart({ romData, title, onPlay, onDelete, isUserGame = false }) {
           </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 

@@ -32,6 +32,7 @@ module.exports = {
     "operator-assignment": "off",
     "no-return-assign": "off",
     "no-unused-vars": "off",
+    "jsx-a11y/click-events-have-key-events": "off",
     "no-continue": "off",
     "no-multi-assign": "off",
     "no-shadow": "off",
