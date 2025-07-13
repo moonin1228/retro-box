@@ -4,9 +4,8 @@ import createTimer from "@/emulator/cpu/timer.js";
 import { physics } from "@/emulator/display/screen.js";
 import createMemory from "@/emulator/memory/memory.js";
 
-const createCPU = (gameboy) => {
+function createCPU(gameboy) {
   const instance = {};
-  let gameTitle = "";
   const register = {
     A: 0,
     B: 0,
@@ -19,13 +18,13 @@ const createCPU = (gameboy) => {
     pc: 0,
     sp: 0,
   };
-  const clock = { cycles: 0, serial: 0 };
+  const clock = { cycles: 0 };
 
   let isInterruptMasterEnabled = false;
   let isHalted = false;
   let isPaused = false;
-  let pendingInterruptEnable = false;
-  let justWokeFromHalt = false;
+  let isPendingInterruptEnable = false;
+  let isJustWokeFromHalt = false;
 
   let nextFrameTimer = null;
 
@@ -34,31 +33,39 @@ const createCPU = (gameboy) => {
   const memory = createMemory(instance);
   const timer = createTimer(instance, memory);
 
-  const reset = () => {
+  function reset() {
     memory.reset();
     Object.assign(register, INITIAL_REGISTER);
-  };
+  }
 
-  const loadRom = async (data) => {
+  async function loadRom(data) {
+    let gameTitle = "";
     memory.setRomData(data);
     gameTitle = await getGameName();
-  };
+  }
 
-  const getRamSize = () => [0, 2, 8, 32][memory.readByte(0x149)] * 1024 || 0;
+  function getRamSize() {
+    const ramSizeCode = memory.readByte(0x149);
+    const sizeKB = [0, 2, 8, 32][ramSizeCode] || 0;
+    return sizeKB * 1024;
+  }
 
-  const getGameName = () => {
+  function getGameName() {
     let name = "";
     for (let i = 0x134; i < 0x143; i++) name += String.fromCharCode(memory.readByte(i) || 32);
     return name;
-  };
+  }
 
-  const run = () => {
+  function run() {
     register.pc = 0x0100;
     frame();
-  };
-  const stop = () => clearTimeout(nextFrameTimer);
+  }
 
-  const frame = () => {
+  function stop() {
+    clearTimeout(nextFrameTimer);
+  }
+
+  function frame() {
     if (!isPaused) nextFrameTimer = setTimeout(frame, 1000 / physics.FREQUENCY);
 
     try {
@@ -66,7 +73,7 @@ const createCPU = (gameboy) => {
       while (!vblank) {
         const old = clock.cycles;
 
-        if (isInterruptMasterEnabled && !pendingInterruptEnable) {
+        if (isInterruptMasterEnabled && !isPendingInterruptEnable) {
           const IF = memory.readByte(0xff0f);
           const IE = memory.readByte(0xffff);
           const pendingInterrupts = IF & IE & 0x1f;
@@ -74,7 +81,7 @@ const createCPU = (gameboy) => {
           if (pendingInterrupts) {
             if (isHalted) {
               isHalted = false;
-              justWokeFromHalt = true;
+              isJustWokeFromHalt = true;
               clock.cycles += 4;
             }
 
@@ -106,9 +113,9 @@ const createCPU = (gameboy) => {
 
           const IF = memory.readByte(0xff0f);
           const IE = memory.readByte(0xffff);
-          if (IF & IE & 0x1f) {
+          if (IF & IE & 0x12f) {
             isHalted = false;
-            justWokeFromHalt = true;
+            isJustWokeFromHalt = true;
             if (!isInterruptMasterEnabled) {
               register.pc = (register.pc - 1) & 0xffff;
             }
@@ -116,35 +123,35 @@ const createCPU = (gameboy) => {
         } else {
           const currentOpcode = fetchOpcode();
 
-          if (justWokeFromHalt) {
-            justWokeFromHalt = false;
+          if (isJustWokeFromHalt) {
+            isJustWokeFromHalt = false;
             clock.c += 4;
           }
 
           opcodeMap[currentOpcode](instance);
           register.F &= 0xf0;
           if (currentOpcode === 0xfb) {
-            pendingInterruptEnable = true;
+            isPendingInterruptEnable = true;
             clock.cycles += 4;
-          } else if (pendingInterruptEnable) {
+          } else if (isPendingInterruptEnable) {
             isInterruptMasterEnabled = true;
-            pendingInterruptEnable = false;
+            isPendingInterruptEnable = false;
             clock.cycles += 4;
           }
         }
 
-        const elapsed = clock.cycles - old;
-        vblank = instance.gpu ? instance.gpu.update(elapsed) : false;
-        timer.update(elapsed);
+        const elapsedCycles = clock.cycles - old;
+        vblank = instance.gpu ? instance.gpu.update(elapsedCycles) : false;
+        timer.update(elapsedCycles);
       }
       clock.cycles = 0;
     } catch (err) {
       stop();
       gameboy?.handleException?.(err);
     }
-  };
+  }
 
-  const fetchOpcode = () => {
+  function fetchOpcode() {
     const opcode = memory.readByte(register.pc);
     register.pc = (register.pc + 1) & 0xffff;
     if (opcode === undefined || opcode === null) {
@@ -154,49 +161,53 @@ const createCPU = (gameboy) => {
       throw new Error(`[CPU]없는 opcode입니다. ${opcode.toString(16)} ${register.pc.toString(16)}`);
     }
     return opcode;
-  };
+  }
 
-  const getRegister = (k) => register[k];
-  const setRegister = (reg, val) => {
-    register[reg] = val & 0xff;
-    if (reg === "sp" || reg === "pc") register[reg] = val & 0xffff;
-  };
+  function setRegister(registerName, value) {
+    register[registerName] = value & 0xff;
+    if (registerName === "sp" || registerName === "pc") register[registerName] = value & 0xffff;
+  }
 
-  const halt = () => {
+  function halt() {
     isHalted = true;
-  };
-  const unhalt = () => {
+  }
+
+  function unhalt() {
     isHalted = false;
-  };
-  const pause = () => {
+  }
+
+  function pause() {
     isPaused = true;
-  };
-  const unpause = () => {
+  }
+
+  function unpause() {
     if (isPaused) {
       isPaused = false;
       frame();
     }
-  };
+  }
 
-  const enableInterrupts = () => {
+  function enableInterrupts() {
     isInterruptMasterEnabled = true;
-  };
+  }
 
-  const scheduleInterruptEnable = () => {
-    pendingInterruptEnable = true;
-  };
+  function scheduleInterruptEnable() {
+    isPendingInterruptEnable = true;
+  }
 
-  const disableInterrupts = () => {
+  function disableInterrupts() {
     isInterruptMasterEnabled = false;
-    pendingInterruptEnable = false;
-    justWokeFromHalt = false;
-  };
+    isPendingInterruptEnable = false;
+    isJustWokeFromHalt = false;
+  }
 
-  const requestInterrupt = (t) => {
-    memory.writeByte(0xff0f, memory.readByte(0xff0f) | (1 << t));
-  };
+  function requestInterrupt(interruptType) {
+    memory.writeByte(0xff0f, memory.readByte(0xff0f) | (1 << interruptType));
+  }
 
-  const resetDivTimer = () => timer.resetDiv();
+  function resetDividerTimer() {
+    timer.resetDiv();
+  }
 
   Object.assign(instance, {
     instance,
@@ -213,7 +224,6 @@ const createCPU = (gameboy) => {
     stop,
     pause,
     unpause,
-    getRegister,
     setRegister,
     halt,
     unhalt,
@@ -221,10 +231,10 @@ const createCPU = (gameboy) => {
     enableInterrupts,
     scheduleInterruptEnable,
     disableInterrupts,
-    resetDivTimer,
+    resetDividerTimer,
   });
 
   return instance;
-};
+}
 
 export default createCPU;
