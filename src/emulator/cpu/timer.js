@@ -1,4 +1,4 @@
-const createTimer = (mediator) => {
+function createTimer(mediator) {
   const DIV = 0xff04;
   const TIMA = 0xff05;
   const TMA = 0xff06;
@@ -31,7 +31,7 @@ const createTimer = (mediator) => {
     }
   }
 
-  const updateDiv = (elapsedCycles) => {
+  function updateDiv(elapsedCycles) {
     const memory = mediator.getComponent("memory");
     if (!memory) return;
 
@@ -42,22 +42,22 @@ const createTimer = (mediator) => {
       dividerCounter -= DIV_THRESHOLD;
       memory.writeByte(DIV, (memory.readByte(DIV) + 1) & 0xff);
     }
-  };
+  }
 
-  const update = (elapsedCycles) => {
+  function update(elapsedCycles) {
     updateDiv(elapsedCycles);
     updateTimer(elapsedCycles);
-  };
+  }
 
-  const resetDiv = () => {
+  function resetDiv() {
     const memory = mediator.getComponent("memory");
     if (!memory) return;
 
     dividerCounter = 0;
     memory.writeByte(DIV, 0);
-  };
+  }
 
   return Object.freeze({ update, resetDiv });
-};
+}
 
 export default createTimer;
