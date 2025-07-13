@@ -1,10 +1,8 @@
 import { INITIAL_REGISTER, INTERRUPTS } from "@/constants/cpuConstants.js";
 import { opcodeMap } from "@/emulator/cpu/opcodes.js";
-import createTimer from "@/emulator/cpu/timer.js";
 import { physics } from "@/emulator/display/screen.js";
-import createMemory from "@/emulator/memory/memory.js";
 
-function createCPU(gameboy) {
+function createCPU(mediator) {
   const instance = {};
   const register = {
     A: 0,
@@ -30,8 +28,7 @@ function createCPU(gameboy) {
 
   instance.imeDelay = false;
 
-  const memory = createMemory(instance);
-  const timer = createTimer(instance, memory);
+  const memory = mediator.getComponent("memory");
 
   function reset() {
     memory.reset();
@@ -70,7 +67,10 @@ function createCPU(gameboy) {
 
     try {
       let vblank = false;
-      while (!vblank) {
+      let cycleCount = 0;
+      const MAX_CYCLES = 70224;
+
+      while (!vblank && cycleCount < MAX_CYCLES) {
         const old = clock.cycles;
 
         if (isInterruptMasterEnabled && !isPendingInterruptEnable) {
@@ -141,13 +141,20 @@ function createCPU(gameboy) {
         }
 
         const elapsedCycles = clock.cycles - old;
-        vblank = instance.gpu ? instance.gpu.update(elapsedCycles) : false;
-        timer.update(elapsedCycles);
+        const gpu = mediator.getComponent("gpu");
+        vblank = gpu ? gpu.update(elapsedCycles) : false;
+        const timer = mediator.getComponent("timer");
+        if (timer) timer.update(elapsedCycles);
+
+        cycleCount += elapsedCycles;
+
+        if (!gpu) {
+          vblank = true;
+        }
       }
       clock.cycles = 0;
-    } catch (err) {
+    } catch (error) {
       stop();
-      gameboy?.handleException?.(err);
     }
   }
 
@@ -206,7 +213,8 @@ function createCPU(gameboy) {
   }
 
   function resetDividerTimer() {
-    timer.resetDiv();
+    const timer = mediator.getComponent("timer");
+    if (timer) timer.resetDiv();
   }
 
   Object.assign(instance, {
@@ -214,7 +222,6 @@ function createCPU(gameboy) {
     register,
     clock,
     memory,
-    timer,
     INTERRUPTS,
     reset,
     loadRom,

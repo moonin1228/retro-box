@@ -2,10 +2,10 @@ import { OAM_END, OAM_START, REG, TILEMAP } from "@/constants/gpuConstants.js";
 import { physics } from "@/emulator/display/screen.js";
 import Util from "@/emulator/util/util.js";
 
-export const createGPU = (screen, cpu) => {
-  const vram = cpu.memory.vram.bind(cpu.memory);
-  const dev = cpu.memory.ioRegister.bind(cpu.memory);
-  const oam = cpu.memory.oamram.bind(cpu.memory);
+const createGPU = (screen, memory, mediator) => {
+  const vram = memory.vram.bind(memory);
+  const dev = memory.ioRegister.bind(memory);
+  const oam = memory.oamram.bind(memory);
 
   let clock = 0;
   let mode = 2;
@@ -173,7 +173,10 @@ export const createGPU = (screen, cpu) => {
     const STAT = dev(REG.STAT);
     if (dev(REG.LY) === dev(REG.LYC)) {
       dev(REG.STAT, STAT | 0x04);
-      if (STAT & 0x40) cpu.requestInterrupt(cpu.INTERRUPTS.LCDC);
+      if (STAT & 0x40) {
+        const cpu = mediator.getComponent("cpu");
+        if (cpu) cpu.requestInterrupt(cpu.INTERRUPTS.LCDC);
+      }
     } else dev(REG.STAT, STAT & ~0x04);
   };
 
@@ -181,7 +184,10 @@ export const createGPU = (screen, cpu) => {
     mode = m;
     const s = dev(REG.STAT) & 0xfc;
     dev(REG.STAT, s | m);
-    if (m < 3 && s & (1 << (3 + m))) cpu.requestInterrupt(cpu.INTERRUPTS.LCDC);
+    if (m < 3 && s & (1 << (3 + m))) {
+      const cpu = mediator.getComponent("cpu");
+      if (cpu) cpu.requestInterrupt(cpu.INTERRUPTS.LCDC);
+    }
   };
 
   const update = (delta) => {
@@ -203,7 +209,8 @@ export const createGPU = (screen, cpu) => {
           if (line === 144) {
             setMode(1);
             vblank = true;
-            cpu.requestInterrupt(cpu.INTERRUPTS.VBLANK);
+            const cpu = mediator.getComponent("cpu");
+            if (cpu) cpu.requestInterrupt(cpu.INTERRUPTS.VBLANK);
             drawFrame();
           } else {
             setMode(2);
