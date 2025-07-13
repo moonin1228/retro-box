@@ -1,54 +1,63 @@
-const createTimer = (cpu, memory) => {
+function createTimer(mediator) {
   const DIV = 0xff04;
   const TIMA = 0xff05;
   const TMA = 0xff06;
   const TAC = 0xff07;
 
-  let mainTime = 0;
-  let divTime = 0;
+  let timerCounter = 0;
+  let dividerCounter = 0;
 
-  const updateTimer = (elapsed) => {
-    if (!(memory.readByte(TAC) & 0x04)) return;
+  function updateTimer(elapsed) {
+    const memory = mediator.getComponent("memory");
+    if (!memory || !(memory.readByte(TAC) & 0x04)) return;
 
-    mainTime += elapsed;
+    timerCounter += elapsed;
 
-    const tacSel = memory.readByte(TAC) & 0x03;
-    const base = [64, 1, 4, 16][tacSel] * 16;
+    const timerSpeedSelector = memory.readByte(TAC) & 0x03;
+    const timaCycleThreshold = [64, 1, 4, 16][timerSpeedSelector] * 16;
+    const cpu = mediator.getComponent("cpu");
 
-    while (mainTime >= base) {
-      mainTime -= base;
+    while (timerCounter >= timaCycleThreshold) {
+      timerCounter -= timaCycleThreshold;
 
-      const next = memory.readByte(TIMA) + 1;
-      if (next > 0xff) {
+      const nextTimaValue = memory.readByte(TIMA) + 1;
+      if (nextTimaValue > 0xff) {
         memory.writeByte(TIMA, memory.readByte(TMA));
-        cpu.requestInterrupt(cpu.INTERRUPTS.TIMER);
+
+        if (cpu) cpu.requestInterrupt(cpu.INTERRUPTS.TIMER);
       } else {
-        memory.writeByte(TIMA, next);
+        memory.writeByte(TIMA, nextTimaValue);
       }
     }
-  };
+  }
 
-  const updateDiv = (elapsed) => {
+  function updateDiv(elapsedCycles) {
+    const memory = mediator.getComponent("memory");
+    if (!memory) return;
+
     const DIV_THRESHOLD = 256;
-    divTime += elapsed;
+    dividerCounter += elapsedCycles;
 
-    if (divTime > DIV_THRESHOLD) {
-      divTime -= DIV_THRESHOLD;
+    if (dividerCounter > DIV_THRESHOLD) {
+      dividerCounter -= DIV_THRESHOLD;
       memory.writeByte(DIV, (memory.readByte(DIV) + 1) & 0xff);
     }
-  };
+  }
 
-  const update = (elapsed) => {
-    updateDiv(elapsed);
-    updateTimer(elapsed);
-  };
+  function update(elapsedCycles) {
+    updateDiv(elapsedCycles);
+    updateTimer(elapsedCycles);
+  }
 
-  const resetDiv = () => {
-    divTime = 0;
-    memory[DIV] = 0;
-  };
+  function resetDiv() {
+    const memory = mediator.getComponent("memory");
+    if (!memory) return;
+
+    dividerCounter = 0;
+    memory.writeByte(DIV, 0);
+  }
 
   return Object.freeze({ update, resetDiv });
-};
+}
 
 export default createTimer;

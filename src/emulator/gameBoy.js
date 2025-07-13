@@ -1,99 +1,118 @@
 import createApu from "@/emulator/audio/apu.js";
 import createCPU from "@/emulator/cpu/cpu.js";
-import GPU from "@/emulator/display/gpu.js";
-import Screen from "@/emulator/display/screen.js";
+import createTimer from "@/emulator/cpu/timer.js";
+import createGPU from "@/emulator/display/gpu.js";
+import createScreen from "@/emulator/display/screen.js";
 import UnimplementedException from "@/emulator/exception.js";
+import createEmulatorMediator from "@/emulator/mediator/emulatorMediator.js";
+import createMemory from "@/emulator/memory/memory.js";
 import RomFileReader from "@/emulator/rom/file_reader.js";
 import createRom from "@/emulator/rom/rom.js";
+import { saveCurrentState } from "@/emulator/util/saveUtils.js";
 import { merge } from "@/emulator/util/util.js";
 
-const defaultOptions = Object.freeze({
+const setupEventSubscriptions = (mediator) => {
+  let totalCycles = 0;
+
+  const AUTO_SAVE_INTERVAL = 2000;
+  let lastSaveTime = performance.now();
+
+  mediator.subscribe(mediator.EVENTS.cpu.frameComplete, (eventData) => {
+    totalCycles += eventData.data.frameCount;
+
+    const now = performance.now();
+    const elapsed = now - lastSaveTime;
+
+    if (elapsed >= AUTO_SAVE_INTERVAL) {
+      try {
+        const cpu = mediator.getComponent("cpu");
+        if (cpu) {
+          saveCurrentState(cpu);
+        }
+      } catch (error) {
+        console.warn("[AutoSave] 자동 저장 실패:", error);
+      }
+      lastSaveTime = now;
+    }
+  });
+};
+
+const defaultOptions = {
   zoom: 1,
   romReaders: [],
   statusContainerId: "status",
   gameNameContainerId: "game-name",
   errorContainerId: "error",
-});
+};
 
-const createGameBoy = (canvas, options = {}) => {
+function createGameBoy(canvas, options = {}) {
   const opts = merge({}, defaultOptions, options);
 
-  const api = {};
+  const mediator = createEmulatorMediator();
+
+  const memory = createMemory(mediator);
+  mediator.registerComponent("memory", memory);
+
   const apu = createApu();
-  const cpu = createCPU(api, { apu });
-  const screen = Screen(canvas, opts.zoom);
-  const gpu = GPU(screen, cpu);
-  cpu.gpu = gpu;
+
+  const timer = createTimer(mediator);
+  mediator.registerComponent("timer", timer);
+
+  const cpu = createCPU(mediator);
+  mediator.registerComponent("cpu", cpu);
+
+  const screen = createScreen(canvas, opts.zoom);
+  mediator.registerComponent("screen", screen);
+
+  const gpu = createGPU(mediator);
+  mediator.registerComponent("gpu", gpu);
+
+  setupEventSubscriptions(mediator);
+
   cpu.apu = apu;
 
-  const statusContainer =
-    document.getElementById(opts.statusContainerId) || document.createElement("div");
-  const gameNameContainer =
-    document.getElementById(opts.gameNameContainerId) || document.createElement("div");
-  const errorContainer =
-    document.getElementById(opts.errorContainerId) || document.createElement("div");
-
-  const setStatus = (txt) => (statusContainer.textContent = txt);
-  const setError = (txt) => {
-    errorContainer.classList.remove("hide");
-    errorContainer.textContent = txt;
-  };
-  const setGameName = (txt) => (gameNameContainer.textContent = txt);
-
-  const error = (msg) => {
-    setStatus("Error during execution");
-    setError(`An error occurred during execution: ${msg}`);
-    cpu.stop();
-  };
-
-  const resetAudio = () => {
+  function resetAudio() {
     try {
       apu.disconnect();
       apu.reset();
 
-      for (let addr = 0xff10; addr <= 0xff3f; addr++) {
-        cpu.memory.writeByte(addr, 0);
+      for (let address = 0xff10; address <= 0xff3f; address++) {
+        cpu.memory.writeByte(address, 0);
       }
 
       cpu.memory.writeByte(0xff26, 0x00);
     } catch (error) {
-      console.error("Error resetting audio:", error);
+      console.error("[gameBoy] 에러 재설정 오류", error);
     }
-  };
+  }
 
-  const startRom = (romObj) => {
-    errorContainer.classList.add("hide");
+  function startRom(romObject) {
     resetAudio();
     cpu.reset();
 
     try {
-      cpu.loadRom(romObj.getData());
-      setStatus("Game Running :");
-      setGameName(cpu.getGameName());
+      cpu.loadRom(romObject.getData());
       cpu.run();
       screen.canvas.focus();
     } catch (e) {
       handleException(e);
     }
-  };
+  }
 
-  const loadRomData = (romData) => {
-    errorContainer.classList.add("hide");
+  function loadRomData(romData) {
     resetAudio();
     cpu.reset();
 
     try {
       cpu.loadRom(romData);
-      setStatus("Game Running :");
-      setGameName(cpu.getGameName());
       cpu.run();
       screen.canvas.focus();
     } catch (e) {
       handleException(e);
     }
-  };
+  }
 
-  const rom = createRom({ startRom, error });
+  const rom = createRom({ startRom });
 
   const readers = opts.romReaders.length ? opts.romReaders : [];
   if (readers.length === 0) {
@@ -105,42 +124,38 @@ const createGameBoy = (canvas, options = {}) => {
 
   readers.forEach((r) => rom.addReader(r));
 
-  const pause = (flag) => {
+  function pause(flag) {
     if (flag) {
-      setStatus("Game Paused :");
       cpu.pause();
       if (apu) {
         apu.clearBuffer();
         apu.disconnect();
       }
     } else {
-      setStatus("Game Running :");
       cpu.unpause();
       apu.connect();
     }
-  };
+  }
 
-  const setSoundEnabled = (v) => {
-    if (v) {
+  function setSoundEnabled(isSoundOn) {
+    if (isSoundOn) {
       apu.connect();
     } else {
       resetAudio();
     }
-  };
+  }
 
-  const setScreenZoom = (v) => screen.setPixelSize(v);
+  function setScreenZoom(zoomLevel) {
+    screen.setPixelSize(zoomLevel);
+  }
 
-  const handleException = (e) => {
-    if (e instanceof UnimplementedException) {
-      e.fatal ? error(`This cartridge is not supported (${e.message})`) : console.error(e.message);
+  function handleException(error) {
+    if (error instanceof UnimplementedException) {
+      console.error(error);
     } else {
-      throw e;
+      throw error;
     }
-  };
-
-  Object.assign(api, {
-    handleException,
-  });
+  }
 
   return Object.freeze({
     cpu,
@@ -148,13 +163,10 @@ const createGameBoy = (canvas, options = {}) => {
     pause,
     setSoundEnabled,
     setScreenZoom,
-    setStatus,
-    setError,
-    setGameName,
     handleException,
     loadRomData,
     resetAudio,
   });
-};
+}
 
 export default createGameBoy;
