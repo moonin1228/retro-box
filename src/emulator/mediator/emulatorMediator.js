@@ -1,11 +1,9 @@
 const EMULATOR_EVENTS = {
   cpu: {
-    cycleComplete: "cpu_cycle_complete",
-    interruptRequest: "cpu_interrupt_request",
-    halt: "cpu_halt",
-    unhalt: "cpu_unhalt",
-    pause: "cpu_pause",
-    unpause: "cpu_unpause",
+    frameComplete: "cpu_frame_complete",
+  },
+  memory: {
+    romLoaded: "memory_rom_loaded",
   },
 
   system: {

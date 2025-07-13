@@ -38,6 +38,16 @@ const createMemory = (mediator) => {
     if (mbc && cpu?.getGameName && cpu?.getRamSize) {
       mbc.loadRam(cpu.getGameName(), cpu.getRamSize());
     }
+
+    mediator.publish(
+      mediator.EVENTS.memory.romLoaded,
+      {
+        size: data.length,
+        mbcType,
+        gameName: cpu?.getGameName?.() || "Unknown",
+      },
+      "memory",
+    );
   }
 
   function vram(address) {

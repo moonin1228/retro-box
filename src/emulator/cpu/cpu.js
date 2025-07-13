@@ -141,6 +141,7 @@ function createCPU(mediator) {
         }
 
         const elapsedCycles = clock.cycles - old;
+
         const gpu = mediator.getComponent("gpu");
         vblank = gpu ? gpu.update(elapsedCycles) : false;
         const timer = mediator.getComponent("timer");
@@ -153,6 +154,14 @@ function createCPU(mediator) {
         }
       }
       clock.cycles = 0;
+
+      mediator.publish(
+        mediator.EVENTS.cpu.frameComplete,
+        {
+          frameCount: cycleCount,
+        },
+        "cpu",
+      );
     } catch (error) {
       stop();
     }

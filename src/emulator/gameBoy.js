@@ -8,7 +8,34 @@ import createEmulatorMediator from "@/emulator/mediator/emulatorMediator.js";
 import createMemory from "@/emulator/memory/memory.js";
 import RomFileReader from "@/emulator/rom/file_reader.js";
 import createRom from "@/emulator/rom/rom.js";
+import { saveCurrentState } from "@/emulator/util/saveUtils.js";
 import { merge } from "@/emulator/util/util.js";
+
+const setupEventSubscriptions = (mediator) => {
+  let totalCycles = 0;
+
+  const AUTO_SAVE_INTERVAL = 2000;
+  let lastSaveTime = performance.now();
+
+  mediator.subscribe(mediator.EVENTS.cpu.frameComplete, (eventData) => {
+    totalCycles += eventData.data.frameCount;
+
+    const now = performance.now();
+    const elapsed = now - lastSaveTime;
+
+    if (elapsed >= AUTO_SAVE_INTERVAL) {
+      try {
+        const cpu = mediator.getComponent("cpu");
+        if (cpu) {
+          saveCurrentState(cpu);
+        }
+      } catch (error) {
+        console.warn("[AutoSave] 자동 저장 실패:", error);
+      }
+      lastSaveTime = now;
+    }
+  });
+};
 
 const defaultOptions = {
   zoom: 1,
@@ -35,9 +62,12 @@ function createGameBoy(canvas, options = {}) {
   mediator.registerComponent("cpu", cpu);
 
   const screen = createScreen(canvas, opts.zoom);
+  mediator.registerComponent("screen", screen);
 
-  const gpu = createGPU(screen, memory, mediator);
+  const gpu = createGPU(mediator);
   mediator.registerComponent("gpu", gpu);
+
+  setupEventSubscriptions(mediator);
 
   cpu.apu = apu;
 

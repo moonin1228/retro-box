@@ -2,7 +2,8 @@ import { OAM_END, OAM_START, REG, TILEMAP } from "@/constants/gpuConstants.js";
 import { physics } from "@/emulator/display/screen.js";
 import Util from "@/emulator/util/util.js";
 
-const createGPU = (screen, memory, mediator) => {
+const createGPU = (mediator) => {
+  const memory = mediator.getComponent("memory");
   const vram = memory.vram.bind(memory);
   const dev = memory.ioRegister.bind(memory);
   const oam = memory.oamram.bind(memory);
@@ -165,6 +166,7 @@ const createGPU = (screen, memory, mediator) => {
   const drawFrame = () => {
     const LCDC = dev(REG.LCDC);
     if (Util.readBit(LCDC, 7)) drawWindow(LCDC);
+    const screen = mediator.getComponent("screen");
     screen.render(buffer);
   };
 
@@ -184,6 +186,7 @@ const createGPU = (screen, memory, mediator) => {
     mode = m;
     const s = dev(REG.STAT) & 0xfc;
     dev(REG.STAT, s | m);
+
     if (m < 3 && s & (1 << (3 + m))) {
       const cpu = mediator.getComponent("cpu");
       if (cpu) cpu.requestInterrupt(cpu.INTERRUPTS.LCDC);
@@ -209,6 +212,7 @@ const createGPU = (screen, memory, mediator) => {
           if (line === 144) {
             setMode(1);
             vblank = true;
+
             const cpu = mediator.getComponent("cpu");
             if (cpu) cpu.requestInterrupt(cpu.INTERRUPTS.VBLANK);
             drawFrame();
