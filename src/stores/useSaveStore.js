@@ -1,49 +1,102 @@
 import { create } from "zustand";
 
-const useSaveStore = create((set) => ({
+import {
+  deleteAllGameSaves,
+  deleteGameSave,
+  getGameSaveStates,
+  loadGameState,
+  saveGameState,
+} from "@/emulator/util/indexedDBUtils.js";
+
+const useSaveStore = create((set, get) => ({
   saveStates: {},
-
   currentSlot: 1,
+  isLoading: false,
+  error: null,
 
-  saveState: (gameTitle, snapshot) =>
-    set((state) => {
-      const newSaveStates = {
-        ...state.saveStates,
-        [gameTitle]: {
-          ...(state.saveStates[gameTitle] || {}),
-          [state.currentSlot]: {
-            timestamp: Date.now(),
-            data: snapshot,
-          },
+  saveState: async (gameTitle, snapshot) => {
+    set({ isLoading: true, error: null });
+    try {
+      await saveGameState(gameTitle, get().currentSlot, snapshot);
+
+      const updatedStates = await getGameSaveStates(gameTitle);
+      set((state) => ({
+        saveStates: {
+          ...state.saveStates,
+          [gameTitle]: updatedStates,
         },
-      };
+        isLoading: false,
+      }));
+    } catch (error) {
+      console.error("세이브 저장 실패:", error);
+      set({
+        error: error.message,
+        isLoading: false,
+      });
+    }
+  },
 
-      localStorage.setItem("saveStates", JSON.stringify(newSaveStates));
-
-      return { saveStates: newSaveStates };
-    }),
-
-  loadState: (gameTitle, slot) => {
-    const saveStates = JSON.parse(localStorage.getItem("saveStates") || "{}");
-    const gameStates = saveStates[gameTitle] || {};
-    return gameStates[slot]?.data || null;
+  loadState: async (gameTitle, slot) => {
+    set({ isLoading: true, error: null });
+    try {
+      const snapshot = await loadGameState(gameTitle, slot);
+      set({ isLoading: false });
+      return snapshot;
+    } catch (error) {
+      console.error("세이브 로드 실패:", error);
+      set({
+        error: error.message,
+        isLoading: false,
+      });
+      return null;
+    }
   },
 
   setCurrentSlot: (slot) => set({ currentSlot: slot }),
 
-  clearGameSaves: (gameTitle) =>
-    set((state) => {
-      const newSaveStates = { ...state.saveStates };
-      delete newSaveStates[gameTitle];
-      localStorage.setItem("saveStates", JSON.stringify(newSaveStates));
-      return { saveStates: newSaveStates };
-    }),
+  clearGameSaves: async (gameTitle) => {
+    set({ isLoading: true, error: null });
+    try {
+      await deleteAllGameSaves(gameTitle);
+      set((state) => {
+        const newSaveStates = { ...state.saveStates };
+        delete newSaveStates[gameTitle];
+        return {
+          saveStates: newSaveStates,
+          isLoading: false,
+        };
+      });
+    } catch (error) {
+      console.error("게임 세이브 삭제 실패:", error);
+      set({
+        error: error.message,
+        isLoading: false,
+      });
+    }
+  },
 
-  initialize: () =>
-    set(() => {
-      const savedStates = JSON.parse(localStorage.getItem("saveStates") || "{}");
-      return { saveStates: savedStates };
-    }),
+  deleteSaveSlot: async (gameTitle, slot) => {
+    set({ isLoading: true, error: null });
+    try {
+      await deleteGameSave(gameTitle, slot);
+
+      const updatedStates = await getGameSaveStates(gameTitle);
+      set((state) => ({
+        saveStates: {
+          ...state.saveStates,
+          [gameTitle]: updatedStates,
+        },
+        isLoading: false,
+      }));
+    } catch (error) {
+      console.error("세이브 슬롯 삭제 실패:", error);
+      set({
+        error: error.message,
+        isLoading: false,
+      });
+    }
+  },
+  initialize: () => set({ saveStates: {}, error: null, isLoading: false }),
 }));
 
 export default useSaveStore;

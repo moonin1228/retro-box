@@ -1,19 +1,50 @@
 import { FaRegTrashAlt } from "react-icons/fa";
 
 import { extractGameTitle } from "@/emulator/util/romUtils.js";
-import { loadRomFromCache, saveRomToCache } from "@/stores/useRomCacheStore.js";
+import useRomCacheStore from "@/stores/useRomCacheStore.js";
+
+export async function createGameCartFromFile(file) {
+  const romCacheStore = useRomCacheStore.getState();
+
+  const cachedRom = await romCacheStore.loadRomFromCache(file.name);
+  if (cachedRom) {
+    const title = extractGameTitle(cachedRom);
+    return {
+      romData: cachedRom,
+      title: title || file.name,
+      fileName: file.name,
+      fromCache: true,
+    };
+  }
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const romData = new Uint8Array(arrayBuffer);
+    const title = extractGameTitle(romData);
+
+    await romCacheStore.saveRomToCache(file.name, romData);
+
+    return {
+      romData,
+      title: title || file.name,
+      fileName: file.name,
+    };
+  } catch (err) {
+    throw new Error(`파일 읽기 실패: ${err.message}`);
+  }
+}
 
 function GameCart({ romData, title, onPlay, onDelete, isUserGame = false }) {
   const gameTitle = (romData && extractGameTitle(romData)) || title || "Unknown Game";
 
-  const handlePlay = () => {
+  function handlePlay() {
     if (onPlay && romData) onPlay(romData);
-  };
+  }
 
-  const handleDelete = (e) => {
+  function handleDelete(e) {
     e.stopPropagation();
     if (onDelete) onDelete();
-  };
+  }
 
   return (
     <div
@@ -59,34 +90,5 @@ function GameCart({ romData, title, onPlay, onDelete, isUserGame = false }) {
     </div>
   );
 }
-
-export const createGameCartFromFile = async (file) => {
-  const cachedRom = await loadRomFromCache(file.name);
-  if (cachedRom) {
-    const title = extractGameTitle(cachedRom);
-    return {
-      romData: cachedRom,
-      title: title || file.name,
-      fileName: file.name,
-      fromCache: true,
-    };
-  }
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    const romData = new Uint8Array(arrayBuffer);
-    const title = extractGameTitle(romData);
-    const cacheSaved = await saveRomToCache(file.name, romData);
-    if (!cacheSaved) {
-      console.warn("ROM 캐시 저장 실패, 게임은 정상 추가됩니다.");
-    }
-    return {
-      romData,
-      title: title || file.name,
-      fileName: file.name,
-    };
-  } catch (err) {
-    throw new Error(`파일 읽기 실패: ${err.message}`);
-  }
-};
 
 export default GameCart;

@@ -1,6 +1,6 @@
 import useSaveStore from "@/stores/useSaveStore.js";
 
-export const saveCurrentState = (cpu) => {
+export const saveCurrentState = async (cpu) => {
   const snapshot = {
     cpu: {
       register: { ...cpu.register },
@@ -14,13 +14,13 @@ export const saveCurrentState = (cpu) => {
 
   const gameTitle = cpu.getGameName?.() || "UnknownGame";
 
-  useSaveStore.getState().saveState(gameTitle, snapshot);
+  await useSaveStore.getState().saveState(gameTitle, snapshot);
 };
 
-export const loadCurrentState = (cpu) => {
+export const loadCurrentState = async (cpu) => {
   const gameTitle = cpu.getGameName?.() || "UnknownGame";
   const currentSlot = useSaveStore.getState().currentSlot;
-  const snapshot = useSaveStore.getState().loadState(gameTitle, currentSlot);
+  const snapshot = await useSaveStore.getState().loadState(gameTitle, currentSlot);
 
   Object.assign(cpu.register, snapshot.cpu.register);
   cpu.clock.cycles = snapshot.cpu.clock.cycles;

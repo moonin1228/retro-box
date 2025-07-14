@@ -91,7 +91,7 @@ function SettingsPanel({ onClose, isOpen, gameBoyRef }) {
 
   return (
     <div
-      className={`fixed top-0 right-0 h-full w-96 transform cursor-default overflow-y-auto bg-black/30 p-6 font-['Press_Start_2P'] text-white shadow-xl backdrop-blur-md transition-transform duration-300 ease-in-out select-none ${
+      className={`fixed top-0 right-0 h-full w-96 transform cursor-default overflow-y-auto bg-black/30 p-6 font-["Press_Start_2P"] text-white shadow-xl backdrop-blur-md transition-transform duration-300 ease-in-out select-none ${
         isOpen ? "translate-x-0" : "translate-x-full"
       }`}
       onKeyDown={handleKeyPress}
