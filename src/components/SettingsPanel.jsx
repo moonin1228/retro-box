@@ -3,9 +3,9 @@ import { FiSave, FiVolume2, FiX } from "react-icons/fi";
 import { IoGameControllerOutline } from "react-icons/io5";
 
 import BUTTON_BITS from "@/constants/buttonBits.js";
-import { loadCurrentState, saveCurrentState } from "@/emulator/util/saveUtils.js";
 import useEmulatorSettings from "@/stores/useEmulatorSettings.js";
 import useGameInputStore from "@/stores/useGameInputStore.js";
+import useSettingsStore from "@/stores/useSettingsStore.js";
 
 const BUTTON_LABELS = {
   RIGHT: "오른쪽",
@@ -47,9 +47,10 @@ const formatKeyCode = (keyCode) => {
   return formatted;
 };
 
-function SettingsPanel({ onClose, isOpen, gameBoyRef }) {
+function SettingsPanel({ onClose, isOpen }) {
   const { volume, setVolume } = useEmulatorSettings();
   const { keyMap, setKey, resetKeys } = useGameInputStore();
+  const { autoSave, setAutoSaveEnabled, setAutoSaveInterval } = useSettingsStore();
   const [selectedButton, setSelectedButton] = useState(null);
 
   const getCurrentKeyForButton = (buttonName) => {
@@ -60,6 +61,10 @@ function SettingsPanel({ onClose, isOpen, gameBoyRef }) {
   const handleKeyPress = (e) => {
     e.preventDefault();
 
+    if (e.code === "Escape") {
+      setSelectedButton(null);
+      return;
+    }
     if (selectedButton) {
       const currentKey = getCurrentKeyForButton(selectedButton);
       if (currentKey) {
@@ -77,21 +82,9 @@ function SettingsPanel({ onClose, isOpen, gameBoyRef }) {
     resetKeys();
   };
 
-  const handleSave = () => {
-    if (gameBoyRef.current?.cpu) {
-      saveCurrentState(gameBoyRef.current.cpu);
-    }
-  };
-
-  const handleLoad = () => {
-    if (gameBoyRef.current?.cpu) {
-      loadCurrentState(gameBoyRef.current.cpu);
-    }
-  };
-
   return (
     <div
-      className={`fixed top-0 right-0 h-full w-96 transform cursor-default overflow-y-auto bg-black/30 p-6 font-["Press_Start_2P"] text-white shadow-xl backdrop-blur-md transition-transform duration-300 ease-in-out select-none ${
+      className={`setting-panel fixed top-0 right-0 h-full w-96 transform cursor-default overflow-y-auto bg-black/30 p-6 font-["Press_Start_2P"] text-white shadow-xl backdrop-blur-md transition-transform duration-300 ease-in-out select-none ${
         isOpen ? "translate-x-0" : "translate-x-full"
       }`}
       onKeyDown={handleKeyPress}
@@ -106,7 +99,7 @@ function SettingsPanel({ onClose, isOpen, gameBoyRef }) {
           aria-label="설정 닫기"
           className="rounded-lg border border-white/20 bg-white/5 p-1.5 transition-colors hover:bg-white/10"
         >
-          <FiX className="h-4 w-4" />
+          <FiX className="h-5 w-5" />
         </button>
       </div>
 
@@ -135,8 +128,8 @@ function SettingsPanel({ onClose, isOpen, gameBoyRef }) {
 
         <div className="cursor-default space-y-4">
           <div className="mb-4 flex items-center gap-3">
-            <div className="flex items-center gap-2 text-sm">
-              <IoGameControllerOutline className="h-4 w-4" />
+            <div className="flex items-center gap-2">
+              <IoGameControllerOutline className="h-5 w-5" />
               <span>키보드 설정</span>
             </div>
             <button
@@ -148,7 +141,7 @@ function SettingsPanel({ onClose, isOpen, gameBoyRef }) {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-2">
+          <section className="grid grid-cols-1 gap-2">
             {Object.entries(BUTTON_LABELS).map(([buttonName, label]) => (
               <button
                 key={buttonName}
@@ -181,7 +174,53 @@ function SettingsPanel({ onClose, isOpen, gameBoyRef }) {
                 </div>
               </button>
             ))}
-          </div>
+          </section>
+
+          <section className="space-y-2 rounded border border-white/20 bg-white/5 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-white">
+                <FiSave className="h-5 w-5" />
+                <span>자동 저장</span>
+              </div>
+              <button
+                onClick={() => {
+                  setAutoSaveEnabled(!autoSave.enabled);
+                }}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 ${
+                  autoSave.enabled ? "bg-blue-500" : "bg-gray-300"
+                }`}
+                type="button"
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${
+                    autoSave.enabled ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {autoSave.enabled && (
+              <div className="mt-2 flex items-center justify-between text-sm text-white/80">
+                <label htmlFor="autosave-interval" className="pl-1">
+                  저장 주기
+                </label>
+                <select
+                  id="autosave-interval"
+                  value={autoSave.interval}
+                  onChange={(e) => {
+                    const newInterval = Number(e.target.value);
+                    setAutoSaveInterval(newInterval);
+                  }}
+                  className="rounded border border-white/20 bg-black/30 px-2 py-1 text-sm text-white focus:outline-none"
+                >
+                  <option value={6000}>1분</option>
+                  <option value={300000}>5분</option>
+                  <option value={600000}>10분</option>
+                  <option value={1800000}>30분</option>
+                </select>
+              </div>
+            )}
+          </section>
         </div>
       </div>
     </div>
