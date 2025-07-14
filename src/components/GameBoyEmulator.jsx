@@ -10,6 +10,7 @@ import useGameInput from "@/hooks/useGameInput.jsx";
 import useEmulatorSettings from "@/stores/useEmulatorSettings.js";
 import useGameInputStore from "@/stores/useGameInputStore.js";
 import useGameStatus from "@/stores/useGameStatus.js";
+import useSettingsStore from "@/stores/useSettingsStore.js";
 
 function GameBoyEmulator({ romData, onEmulatorReady, gameTitle }) {
   const canvasRef = useRef(null);
@@ -17,6 +18,7 @@ function GameBoyEmulator({ romData, onEmulatorReady, gameTitle }) {
   const { isGamePause, togglePause } = useGameStatus();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { volume } = useEmulatorSettings();
+  const { autoSave } = useSettingsStore();
   const volumeUpdateRef = useRef(null);
 
   useGameInput();
@@ -103,6 +105,18 @@ function GameBoyEmulator({ romData, onEmulatorReady, gameTitle }) {
     }
   }, []);
 
+  useEffect(() => {
+    if (gameBoyRef.current) {
+      gameBoyRef.current.updateAutoSaveSettings?.(autoSave);
+    }
+  }, [autoSave]);
+
+  useEffect(() => {
+    if (gameBoyRef.current) {
+      gameBoyRef.current.setGamePaused?.(isGamePause);
+    }
+  }, [isGamePause]);
+
   const handleTogglePause = () => {
     if (!gameBoyRef.current) return;
     togglePause();
@@ -136,12 +150,7 @@ function GameBoyEmulator({ romData, onEmulatorReady, gameTitle }) {
         <span>설정</span>
       </button>
 
-      <SettingsPanel
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        gameBoyRef={gameBoyRef}
-        gameTitle={gameTitle}
-      />
+      <SettingsPanel isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
       <div className="-mt-1 flex gap-5">
         <button

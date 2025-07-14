@@ -30,6 +30,7 @@ module.exports = {
     "simple-import-sort/exports": "error",
     "no-bitwise": "off",
     "operator-assignment": "off",
+    "jsx-a11y/label-has-associated-control": "off",
     "no-return-assign": "off",
     "no-unused-vars": "off",
     "jsx-a11y/click-events-have-key-events": "off",

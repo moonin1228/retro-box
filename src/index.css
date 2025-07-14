@@ -33,4 +33,8 @@
     font-family: "Press Start 2P", "Courier New", Courier, monospace;
     letter-spacing: 0.5px;
   }
+
+  .setting-panel {
+    font-family: initial !important;
+  }
 }

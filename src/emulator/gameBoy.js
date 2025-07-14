@@ -11,19 +11,23 @@ import createRom from "@/emulator/rom/rom.js";
 import { saveCurrentState } from "@/emulator/util/saveUtils.js";
 import { merge } from "@/emulator/util/util.js";
 
-const setupEventSubscriptions = (mediator) => {
+const setupEventSubscriptions = (mediator, getAutoSaveSettings) => {
   let totalCycles = 0;
-
-  const AUTO_SAVE_INTERVAL = 12000;
   let lastSaveTime = performance.now();
 
   mediator.subscribe(mediator.EVENTS.cpu.frameComplete, (eventData) => {
     totalCycles += eventData.data.frameCount;
 
+    const autoSaveSettings = getAutoSaveSettings();
+
+    if (!autoSaveSettings.enabled) {
+      return;
+    }
+
     const now = performance.now();
     const elapsed = now - lastSaveTime;
 
-    if (elapsed >= AUTO_SAVE_INTERVAL) {
+    if (elapsed >= autoSaveSettings.interval) {
       try {
         const cpu = mediator.getComponent("cpu");
         if (cpu) {
@@ -35,6 +39,12 @@ const setupEventSubscriptions = (mediator) => {
       lastSaveTime = now;
     }
   });
+
+  return {
+    resetAutoSaveTimer: () => {
+      lastSaveTime = performance.now();
+    },
+  };
 };
 
 const defaultOptions = {
@@ -49,6 +59,22 @@ function createGameBoy(canvas, options = {}) {
   const opts = merge({}, defaultOptions, options);
 
   const mediator = createEmulatorMediator();
+
+  let autoSaveSettings = {
+    enabled: false,
+    interval: 1000,
+  };
+
+  let isGamePaused = false;
+
+  const getAutoSaveSettings = () => {
+    const result = {
+      enabled: autoSaveSettings.enabled && !isGamePaused,
+      interval: autoSaveSettings.interval,
+    };
+
+    return result;
+  };
 
   const memory = createMemory(mediator);
   mediator.registerComponent("memory", memory);
@@ -67,7 +93,7 @@ function createGameBoy(canvas, options = {}) {
   const gpu = createGPU(mediator);
   mediator.registerComponent("gpu", gpu);
 
-  setupEventSubscriptions(mediator);
+  const eventSubscriptions = setupEventSubscriptions(mediator, getAutoSaveSettings);
 
   cpu.apu = apu;
 
@@ -125,6 +151,8 @@ function createGameBoy(canvas, options = {}) {
   readers.forEach((r) => rom.addReader(r));
 
   function pause(flag) {
+    isGamePaused = flag;
+
     if (flag) {
       cpu.pause();
       if (apu) {
@@ -166,6 +194,19 @@ function createGameBoy(canvas, options = {}) {
     handleException,
     loadRomData,
     resetAudio,
+
+    updateAutoSaveSettings: (newSettings) => {
+      autoSaveSettings = { ...autoSaveSettings, ...newSettings };
+      if (eventSubscriptions?.resetAutoSaveTimer) {
+        eventSubscriptions.resetAutoSaveTimer();
+      }
+    },
+
+    setGamePaused: (paused) => {
+      isGamePaused = paused;
+    },
+
+    getAutoSaveSettings: () => autoSaveSettings,
   });
 }
 
