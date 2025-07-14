@@ -1,7 +1,7 @@
 import { FaRegTrashAlt } from "react-icons/fa";
 
 import { extractGameTitle } from "@/emulator/util/romUtils.js";
-import { loadRomFromCache, saveRomToCache } from "@/stores/useRomCacheStore.js";
+import useRomCacheStore from "@/stores/useRomCacheStore.js";
 
 function GameCart({ romData, title, onPlay, onDelete, isUserGame = false }) {
   const gameTitle = (romData && extractGameTitle(romData)) || title || "Unknown Game";
@@ -61,7 +61,9 @@ function GameCart({ romData, title, onPlay, onDelete, isUserGame = false }) {
 }
 
 export const createGameCartFromFile = async (file) => {
-  const cachedRom = await loadRomFromCache(file.name);
+  const romCacheStore = useRomCacheStore.getState();
+
+  const cachedRom = await romCacheStore.loadRomFromCache(file.name);
   if (cachedRom) {
     const title = extractGameTitle(cachedRom);
     return {
@@ -71,14 +73,14 @@ export const createGameCartFromFile = async (file) => {
       fromCache: true,
     };
   }
+
   try {
     const arrayBuffer = await file.arrayBuffer();
     const romData = new Uint8Array(arrayBuffer);
     const title = extractGameTitle(romData);
-    const cacheSaved = await saveRomToCache(file.name, romData);
-    if (!cacheSaved) {
-      console.warn("ROM 캐시 저장 실패, 게임은 정상 추가됩니다.");
-    }
+
+    await romCacheStore.saveRomToCache(file.name, romData);
+
     return {
       romData,
       title: title || file.name,

@@ -14,7 +14,7 @@ import { merge } from "@/emulator/util/util.js";
 const setupEventSubscriptions = (mediator) => {
   let totalCycles = 0;
 
-  const AUTO_SAVE_INTERVAL = 2000;
+  const AUTO_SAVE_INTERVAL = 12000;
   let lastSaveTime = performance.now();
 
   mediator.subscribe(mediator.EVENTS.cpu.frameComplete, (eventData) => {
