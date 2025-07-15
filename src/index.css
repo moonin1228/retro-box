@@ -52,3 +52,9 @@
     @apply rounded-full border border-gray-500 bg-[#c8c8c8] px-4 py-1.5 font-mono text-[10px] tracking-wide text-gray-700 uppercase transition-all duration-150 ease-out hover:brightness-105 active:scale-95;
   }
 }
+
+.noselect {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}

@@ -137,7 +137,7 @@ function GameBoyEmulator({ romData, onEmulatorReady, gameTitle }) {
   };
 
   return (
-    <div className="flex flex-col items-center gap-5 md:gap-6 lg:gap-8">
+    <div className="noselect touch-callout-none flex flex-col items-center gap-5 select-none md:gap-6 lg:gap-8">
       <section className="-mt-15 flex justify-center md:-mt-0">
         <canvas
           ref={canvasRef}

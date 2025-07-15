@@ -31,20 +31,20 @@ function VirtualGamepad() {
         </div>
       </div>
       <div className="fixed right-4 bottom-20 flex flex-col items-center gap-2 md:hidden">
-        <div className="relative h-[80px] w-[80px]">
-          <button
-            {...bindTouch(BUTTON_BITS.B)}
-            className="ab-btn absolute bottom-0 left-0 translate-x-[-10px] translate-y-[10px]"
-            type="button"
-          >
-            B
-          </button>
+        <div className="relative h-32 w-32">
           <button
             {...bindTouch(BUTTON_BITS.A)}
-            className="ab-btn absolute top-0 right-0 translate-x-[10px] translate-y-[-10px]"
+            className="ab-btn absolute top-2 right-4 h-15 w-15 text-base"
             type="button"
           >
             A
+          </button>
+          <button
+            {...bindTouch(BUTTON_BITS.B)}
+            className="ab-btn absolute bottom-0.5 left-1 h-15 w-15 text-base"
+            type="button"
+          >
+            B
           </button>
         </div>
       </div>
