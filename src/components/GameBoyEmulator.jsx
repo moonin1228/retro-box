@@ -26,7 +26,7 @@ function GameBoyEmulator({ romData, onEmulatorReady, gameTitle }) {
 
   const updateVolume = () => {
     if (gameBoyRef.current) {
-      const gbVolume = Math.floor((volume / 100) * 7);
+      const gbVolume = Math.floor((volume / 100) * 4);
       const nr50Value = (gbVolume << 4) | gbVolume;
       if (gameBoyRef.current.cpu?.memory) {
         gameBoyRef.current.cpu.memory.writeByte(0xff24, nr50Value);
@@ -64,6 +64,7 @@ function GameBoyEmulator({ romData, onEmulatorReady, gameTitle }) {
 
     return () => {
       if (gameBoyRef.current) {
+        gameBoyRef.current.resetAudio();
         gameBoyRef.current.pause(true);
       }
       if (volumeUpdateRef.current) {
