@@ -223,7 +223,6 @@ function LibraryPage() {
         <div className="mx-auto max-w-screen-xl px-4 py-4 sm:px-6">
           <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
             <h1 className="text-xl font-bold text-white sm:text-2xl">게임 라이브러리</h1>
-
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
               <div className="relative">
                 <input

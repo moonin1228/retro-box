@@ -51,7 +51,6 @@ function GamePage() {
           type="button"
         >
           <IoMdArrowRoundBack size={20} />
-          <span>라이브러리</span>
         </button>
       </div>
     </div>

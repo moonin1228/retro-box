@@ -76,7 +76,6 @@ function GameCart({ romData, title, onPlay, onDelete, isUserGame = false }) {
           {gameTitle}
         </span>
       </div>
-
       <div className="absolute bottom-2 left-1/2 z-10 flex -translate-x-1/2 justify-center">
         <div className="group relative">
           <div className="absolute bottom-full left-1/2 mb-2 -translate-x-1/2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
