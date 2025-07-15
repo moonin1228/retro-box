@@ -31,6 +31,7 @@ module.exports = {
     "no-bitwise": "off",
     "operator-assignment": "off",
     "jsx-a11y/label-has-associated-control": "off",
+    "react/jsx-props-no-spreading": "off",
     "no-return-assign": "off",
     "no-unused-vars": "off",
     "jsx-a11y/click-events-have-key-events": "off",

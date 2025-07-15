@@ -29,7 +29,7 @@ function GamePage() {
           <p className="mb-4 text-lg">게임을 불러오는 중...</p>
           <button
             onClick={handleBackToLibrary}
-            className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+            className="rounded bg-blue-500 px-2.5 py-2 text-white hover:bg-blue-600"
             type="button"
           >
             라이브러리로 돌아가기

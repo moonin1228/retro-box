@@ -4,6 +4,7 @@ import { IoIosSave, IoMdSettings } from "react-icons/io";
 import { Tooltip } from "react-tooltip";
 
 import SettingsPanel from "@/components/SettingsPanel.jsx";
+import VirtualGamepad from "@/components/VirtualGamepad.jsx";
 import createGameBoy from "@/emulator/gameBoy.js";
 import { loadCurrentState, saveCurrentState } from "@/emulator/util/saveUtils.js";
 import useGameInput from "@/hooks/useGameInput.jsx";
@@ -137,7 +138,7 @@ function GameBoyEmulator({ romData, onEmulatorReady, gameTitle }) {
 
   return (
     <div className="flex flex-col items-center gap-5 md:gap-6 lg:gap-8">
-      <div className="flex justify-center">
+      <section className="-mt-15 flex justify-center md:-mt-0">
         <canvas
           ref={canvasRef}
           width={160}
@@ -145,20 +146,60 @@ function GameBoyEmulator({ romData, onEmulatorReady, gameTitle }) {
           className="-mt-50 aspect-[160/144] w-[95vw] max-w-[100vw] border-2 border-gray-800 bg-[#B3B3B3] focus:ring-2 focus:outline-none sm:max-w-[320px] md:-mt-10 md:max-w-[768px] lg:-mt-10 lg:w-[48vw] lg:max-w-full"
           style={{ imageRendering: "pixelated" }}
         />
-      </div>
+      </section>
 
-      <button
-        onClick={() => setIsSettingsOpen(true)}
-        className="absolute top-4 right-4 flex items-center gap-2 rounded-lg bg-gray-800/80 px-4 py-2 text-white transition-colors hover:bg-gray-700/80 md:top-6 md:right-6 md:px-5 md:py-2.5 lg:px-6 lg:py-3"
-        type="button"
-      >
-        <IoMdSettings size={20} className="md:text-[22px] lg:text-[24px]" />
-        <span className="text-sm md:text-base lg:text-lg">설정</span>
-      </button>
+      <section className="relative flex w-full justify-center md:hidden">
+        <div className="-mt-3 flex gap-4">
+          <button
+            type="button"
+            onClick={handleSaveData}
+            data-tooltip-id="emulator-tooltip"
+            data-tooltip-content="현재 상태 저장하기"
+            className="flex h-7 w-7 items-center justify-center rounded-md bg-[#dcd3cc] text-[#534d48] shadow-[inset_-2px_-2px_0px_#8b8781,inset_2px_2px_0px_#f3ede8] transition-all duration-200 hover:brightness-105 active:shadow-[inset_2px_2px_0px_#8b8781,inset_-2px_-2px_0px_#f3ede8] md:h-11 md:w-11 lg:h-12 lg:w-12"
+          >
+            <IoIosSave className="text-3xl md:text-[34px] lg:text-[36px]" />
+          </button>
 
-      <SettingsPanel isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+          <button
+            onClick={handleTogglePause}
+            type="button"
+            data-tooltip-id="emulator-tooltip"
+            data-tooltip-content={isGamePause ? "게임 재개하기" : "게임 일시정지"}
+            className="flex h-7 w-7 items-center justify-center rounded-md bg-[#dcd3cc] text-[#534d48] shadow-[inset_-2px_-2px_0px_#8b8781,inset_2px_2px_0px_#f3ede8] transition-all duration-200 hover:brightness-105 active:shadow-[inset_2px_2px_0px_#8b8781,inset_-2px_-2px_0px_#f3ede8] md:h-11 md:w-11 lg:h-12 lg:w-12"
+          >
+            {isGamePause ? (
+              <FaPlay className="text-xl md:text-2xl lg:text-[26px]" />
+            ) : (
+              <FaPause className="text-xl md:text-2xl lg:text-[26px]" />
+            )}
+          </button>
 
-      <div className="-mt-1 flex gap-5 md:gap-6 lg:gap-8">
+          <button
+            type="button"
+            onClick={handleLoadData}
+            data-tooltip-id="emulator-tooltip"
+            data-tooltip-content="저장된 상태 불러오기"
+            className="flex h-7 w-7 items-center justify-center rounded-md bg-[#dcd3cc] text-[#534d48] shadow-[inset_-2px_-2px_0px_#8b8781,inset_2px_2px_0px_#f3ede8] transition-all duration-200 hover:brightness-105 active:shadow-[inset_2px_2px_0px_#8b8781,inset_-2px_-2px_0px_#f3ede8] md:h-11 md:w-11 lg:h-12 lg:w-12"
+          >
+            <FaDownload className="text-xl md:text-[26px] lg:text-[28px]" />
+          </button>
+        </div>
+        <VirtualGamepad />
+      </section>
+
+      <section>
+        <button
+          onClick={() => setIsSettingsOpen(true)}
+          className="absolute top-4 right-4 flex items-center gap-2 rounded-lg bg-gray-900/80 px-2.5 py-2 text-white transition-colors hover:bg-gray-700/80 md:top-6 md:right-6 md:px-5 md:py-2.5 lg:px-3 lg:py-3"
+          type="button"
+        >
+          <IoMdSettings size={20} />
+          <span className="hidden text-sm md:inline md:text-base lg:text-lg">설정</span>
+        </button>
+        <SettingsPanel isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      </section>
+
+      <section className="-mt-6 hidden gap-5 md:flex md:gap-6 lg:gap-8">
         <button
           type="button"
           onClick={handleSaveData}
@@ -194,7 +235,7 @@ function GameBoyEmulator({ romData, onEmulatorReady, gameTitle }) {
         </button>
 
         <Tooltip id="emulator-tooltip" place="top" />
-      </div>
+      </section>
     </div>
   );
 }
