@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 function MainPage() {
@@ -6,6 +6,13 @@ function MainPage() {
   const [progress, setProgress] = useState(0);
 
   const beepRef = useRef(null);
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, []);
 
   if (!beepRef.current) {
     beepRef.current = new Audio("/sounds/coin.mp3");

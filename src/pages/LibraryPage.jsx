@@ -220,11 +220,11 @@ function LibraryPage() {
       />
 
       <div className="sticky top-0 z-30 border-b border-white/20 bg-black/20 backdrop-blur-sm">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <h1 className="text-2xl font-bold text-white">게임 라이브러리</h1>
+        <div className="mx-auto max-w-screen-xl px-4 py-4 sm:px-6">
+          <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+            <h1 className="text-xl font-bold text-white sm:text-2xl">게임 라이브러리</h1>
 
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4">
               <div className="relative">
                 <input
                   type="text"
@@ -238,30 +238,29 @@ function LibraryPage() {
 
               <button
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2 rounded-lg border border-violet-500 bg-purple-500 to-purple-700 px-5 py-2 font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:brightness-110 active:scale-95"
+                className="flex items-center justify-center gap-2 rounded-lg border border-violet-500 bg-purple-500 to-purple-700 px-4 py-2 text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:brightness-110 active:scale-95 sm:px-5"
                 type="button"
               >
                 <span className="text-lg">📁</span>
-                게임 추가
+                <span className="text-sm sm:text-base">게임 추가</span>
               </button>
             </div>
           </div>
         </div>
       </div>
-
-      <div className="container mx-auto px-6 py-8">
+      <div className="mx-auto max-w-screen-xl px-4 py-10 sm:px-6 sm:py-12">
         {filteredGames.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-white">
-            <div className="mb-4 text-6xl">🎮</div>
-            <h2 className="mb-2 text-2xl font-bold">
+            <div className="mb-4 text-5xl sm:text-6xl">🎮</div>
+            <h2 className="mb-2 text-xl font-bold sm:text-2xl">
               {searchTerm ? "검색 결과가 없습니다" : "게임이 없습니다"}
             </h2>
-            <p className="mb-6 text-white/70">
+            <p className="mb-6 text-sm text-white/70 sm:text-base">
               {searchTerm ? "다른 검색어를 시도해보세요" : "게임 파일을 추가해보세요"}
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
             {filteredGames.map((game) => (
               <GameCart
                 key={game.id}
