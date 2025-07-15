@@ -12,6 +12,14 @@ function GamePage() {
   const gameTitle = location.state?.gameTitle;
 
   useEffect(() => {
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, []);
+
+  useEffect(() => {
     if (!romData || !gameTitle) {
       console.warn("게임 데이터가 없습니다. 라이브러리 페이지로 이동합니다.");
       navigate("/library");
