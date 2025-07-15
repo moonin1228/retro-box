@@ -1,19 +1,20 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { IoMdArrowRoundBack, IoMdSettings } from "react-icons/io";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import GameBoyEmulator from "@/components/GameBoyEmulator.jsx";
+import BackConfirmModal from "@/components/modals/BackConfirmModal.jsx";
 
 function GamePage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const romData = location.state?.romData;
   const gameTitle = location.state?.gameTitle;
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
-
     return () => {
       document.body.style.overflow = "unset";
     };
@@ -26,26 +27,33 @@ function GamePage() {
     }
   }, [romData, gameTitle, navigate]);
 
+  useEffect(() => {
+    const handlePopState = (e) => {
+      e.preventDefault();
+      setShowConfirmModal(true);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    window.history.pushState(null, "", window.location.pathname);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
   const handleBackToLibrary = () => {
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmNavigation = () => {
+    setShowConfirmModal(false);
     navigate("/library");
   };
 
-  if (!romData || !gameTitle) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <p className="mb-4 text-lg">게임을 불러오는 중...</p>
-          <button
-            onClick={handleBackToLibrary}
-            className="rounded bg-blue-500 px-2.5 py-2 text-white hover:bg-blue-600"
-            type="button"
-          >
-            라이브러리로 돌아가기
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const handleCancelNavigation = () => {
+    setShowConfirmModal(false);
+    window.history.pushState(null, "", window.location.pathname);
+  };
 
   return (
     <div className="relative h-screen w-full">
@@ -60,6 +68,12 @@ function GamePage() {
         >
           <IoMdArrowRoundBack size={20} />
         </button>
+
+        <BackConfirmModal
+          isOpen={showConfirmModal}
+          onConfirm={handleConfirmNavigation}
+          onCancel={handleCancelNavigation}
+        />
       </div>
     </div>
   );
