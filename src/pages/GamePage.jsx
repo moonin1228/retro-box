@@ -12,6 +12,14 @@ function GamePage() {
   const gameTitle = location.state?.gameTitle;
 
   useEffect(() => {
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, []);
+
+  useEffect(() => {
     if (!romData || !gameTitle) {
       console.warn("게임 데이터가 없습니다. 라이브러리 페이지로 이동합니다.");
       navigate("/library");
@@ -29,7 +37,7 @@ function GamePage() {
           <p className="mb-4 text-lg">게임을 불러오는 중...</p>
           <button
             onClick={handleBackToLibrary}
-            className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+            className="rounded bg-blue-500 px-2.5 py-2 text-white hover:bg-blue-600"
             type="button"
           >
             라이브러리로 돌아가기
@@ -51,7 +59,6 @@ function GamePage() {
           type="button"
         >
           <IoMdArrowRoundBack size={20} />
-          <span>라이브러리</span>
         </button>
       </div>
     </div>

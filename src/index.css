@@ -38,3 +38,23 @@
     font-family: initial !important;
   }
 }
+
+@layer components {
+  .dpad-btn {
+    @apply h-12 w-12 rounded-lg border border-[#1a1a1a] bg-[#2c2c2c] text-base font-bold text-white transition-all duration-150 ease-out active:scale-95 active:bg-[#1f1f1f];
+  }
+
+  .ab-btn {
+    @apply h-14 w-14 rounded-full border-[3px] border-[#612936] bg-[#8c3b4a] text-sm font-semibold text-white transition-all duration-150 ease-out hover:brightness-110 active:scale-95;
+  }
+
+  .system-btn {
+    @apply rounded-full border border-gray-500 bg-[#c8c8c8] px-4 py-1.5 font-mono text-[10px] tracking-wide text-gray-700 uppercase transition-all duration-150 ease-out hover:brightness-105 active:scale-95;
+  }
+}
+
+.noselect {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
