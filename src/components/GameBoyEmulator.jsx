@@ -13,7 +13,7 @@ import useGameInputStore from "@/stores/useGameInputStore.js";
 import useGameStatus from "@/stores/useGameStatus.js";
 import useSettingsStore from "@/stores/useSettingsStore.js";
 
-function GameBoyEmulator({ romData, onEmulatorReady, gameTitle }) {
+function GameBoyEmulator({ romData, onEmulatorReady, gameTitle, onLoadSaveCallback }) {
   const canvasRef = useRef(null);
   const gameBoyRef = useRef(null);
   const { isGamePause, togglePause } = useGameStatus();
@@ -62,6 +62,20 @@ function GameBoyEmulator({ romData, onEmulatorReady, gameTitle }) {
       onEmulatorReady(gameBoy);
     }
 
+    if (onLoadSaveCallback) {
+      onLoadSaveCallback(() => (saveData) => {
+        if (gameBoyRef.current?.cpu && saveData) {
+          const cpu = gameBoyRef.current.cpu;
+          Object.assign(cpu.register, saveData.cpu.register);
+          cpu.clock.cycles = saveData.cpu.clock.cycles;
+          cpu.isInterruptMasterEnabled = saveData.cpu.ime;
+          cpu.isHalted = saveData.cpu.halted;
+          cpu.isPaused = saveData.cpu.paused;
+          cpu.memory.loadSnapshot(saveData.memory);
+        }
+      });
+    }
+
     return () => {
       if (gameBoyRef.current) {
         gameBoyRef.current.resetAudio();
@@ -71,7 +85,7 @@ function GameBoyEmulator({ romData, onEmulatorReady, gameTitle }) {
         clearInterval(volumeUpdateRef.current);
       }
     };
-  }, [romData, onEmulatorReady]);
+  }, [romData, onEmulatorReady, onLoadSaveCallback]);
 
   useEffect(() => {
     if (romData && gameBoyRef.current) {

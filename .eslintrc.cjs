@@ -34,6 +34,7 @@ module.exports = {
     "react/jsx-props-no-spreading": "off",
     "no-return-assign": "off",
     "no-unused-vars": "off",
+    "react/jsx-no-bind": "off",
     "jsx-a11y/click-events-have-key-events": "off",
     "no-continue": "off",
     "no-multi-assign": "off",
