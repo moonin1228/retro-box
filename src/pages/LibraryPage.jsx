@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import GameCart, { createGameCartFromFile } from "@/components/GameCart.jsx";
 import SaveLoadModal from "@/components/modals/SaveLoadModal.jsx";
@@ -47,6 +47,17 @@ function LibraryPage() {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const { getRomCacheInfo, loadRomFromCache, deleteRomFromCache } = useRomCacheStore();
+
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.shouldRefresh && !sessionStorage.getItem("refreshed")) {
+      sessionStorage.setItem("refreshed", "true");
+      window.location.reload();
+    } else {
+      sessionStorage.removeItem("refreshed");
+    }
+  }, [location.state]);
 
   useEffect(() => {
     async function loadGames() {
@@ -141,7 +152,6 @@ function LibraryPage() {
 
   async function navigateToGame(saveData) {
     const game = saveModal.game;
-    console.log("game", game);
     if (!game) return;
 
     let romData = game.romData;
