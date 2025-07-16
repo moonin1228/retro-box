@@ -39,7 +39,6 @@ function SaveLoadModal({ isOpen, onClose, gameTitle, onLoadSave, onStartNewGame 
   async function handleDeleteSave(slot) {
     const game = normalizeTitle(gameTitle);
     await deleteSaveSlot(game, slot);
-    console.log("지움");
     await loadSaves();
   }
 

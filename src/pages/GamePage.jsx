@@ -25,7 +25,7 @@ function GamePage() {
   useEffect(() => {
     if (!romData || !gameTitle) {
       console.warn("게임 데이터가 없습니다. 라이브러리 페이지로 이동합니다.");
-      navigate("/library");
+      navigate("/library", { state: { shouldRefresh: true } });
     }
   }, [romData, gameTitle, navigate]);
 
@@ -55,7 +55,7 @@ function GamePage() {
 
   const handleConfirmNavigation = () => {
     setShowConfirmModal(false);
-    navigate("/library");
+    navigate("/library", { state: { shouldRefresh: true } });
   };
 
   const handleCancelNavigation = () => {
