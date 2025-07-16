@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import GameCart, { createGameCartFromFile } from "@/components/GameCart.jsx";
+import SaveLoadModal from "@/components/modals/SaveLoadModal.jsx";
 import Toast from "@/components/Toast.jsx";
 import useRomCacheStore from "@/stores/useRomCacheStore.js";
 
@@ -42,6 +43,7 @@ function LibraryPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState({ isVisible: false, message: "", type: "success" });
+  const [saveModal, setSaveModal] = useState({ isOpen: false, game: null });
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const { getRomCacheInfo, loadRomFromCache, deleteRomFromCache } = useRomCacheStore();
@@ -49,44 +51,34 @@ function LibraryPage() {
   useEffect(() => {
     async function loadGames() {
       setIsLoading(true);
-      try {
-        const presetGames = await Promise.all(
-          defaultGames.map(async (game) => {
-            if (game.romPath) {
-              const romData = await loadPresetRom(game.romPath);
-              return { ...game, romData, isUserGame: false };
-            }
-            return { ...game, isUserGame: false };
-          }),
-        );
+      const presetGames = await Promise.all(
+        defaultGames.map(async (game) => {
+          if (game.romPath) {
+            const romData = await loadPresetRom(game.romPath);
+            return { ...game, romData, isUserGame: false };
+          }
+          return { ...game, isUserGame: false };
+        }),
+      );
 
-        const cachedRoms = await getRomCacheInfo();
-        const userGames = await Promise.all(
-          cachedRoms.map(async (romInfo) => {
-            const romData = await loadRomFromCache(romInfo.fileName);
-            return {
-              id: `${romInfo.fileName}_${romInfo.timestamp}`,
-              title: romInfo.fileName.replace(/\.(gb|gbc)$/i, ""),
-              fileName: romInfo.fileName,
-              romData,
-              isUserGame: true,
-              timestamp: romInfo.timestamp,
-              size: romInfo.size,
-            };
-          }),
-        );
-        const allGames = [...presetGames, ...userGames];
-        setGames(allGames);
-      } catch (error) {
-        console.error("게임 로드 실패:", error);
-        setToast({
-          isVisible: true,
-          message: "게임 목록을 불러오는데 실패했습니다.",
-          type: "error",
-        });
-      } finally {
-        setIsLoading(false);
-      }
+      const cachedRoms = await getRomCacheInfo();
+      const userGames = await Promise.all(
+        cachedRoms.map(async (romInfo) => {
+          const romData = await loadRomFromCache(romInfo.fileName);
+          return {
+            id: `${romInfo.fileName}_${romInfo.timestamp}`,
+            title: romInfo.fileName.replace(/\.(gb|gbc)$/i, ""),
+            fileName: romInfo.fileName,
+            romData,
+            isUserGame: true,
+            timestamp: romInfo.timestamp,
+            size: romInfo.size,
+          };
+        }),
+      );
+
+      setGames([...presetGames, ...userGames]);
+      setIsLoading(false);
     }
 
     loadGames();
@@ -102,34 +94,23 @@ function LibraryPage() {
   async function handleFileUpload(file) {
     if (!file) return;
 
-    try {
-      const gameData = await createGameCartFromFile(file);
+    const gameData = await createGameCartFromFile(file);
+    const newGame = {
+      id: `user_${gameData.fileName}_${Date.now()}`,
+      title: gameData.title,
+      fileName: gameData.fileName,
+      romData: gameData.romData,
+      isUserGame: true,
+      timestamp: Date.now(),
+      size: gameData.romData.length,
+    };
 
-      const newGame = {
-        id: `user_${gameData.fileName}_${Date.now()}`,
-        title: gameData.title,
-        fileName: gameData.fileName,
-        romData: gameData.romData,
-        isUserGame: true,
-        timestamp: Date.now(),
-        size: gameData.romData.length,
-      };
-
-      setGames((prevGames) => [...prevGames, newGame]);
-
-      setToast({
-        isVisible: true,
-        message: `${gameData.title} 게임이 추가되었습니다!`,
-        type: "success",
-      });
-    } catch (error) {
-      console.error("파일 업로드 실패:", error);
-      setToast({
-        isVisible: true,
-        message: "파일 업로드에 실패했습니다.",
-        type: "error",
-      });
-    }
+    setGames((prevGames) => [...prevGames, newGame]);
+    setToast({
+      isVisible: true,
+      message: `${gameData.title} 게임이 추가되었습니다!`,
+      type: "success",
+    });
   }
 
   async function handleFileInputChange(event) {
@@ -143,61 +124,46 @@ function LibraryPage() {
   }
 
   async function handlePlayGame(game) {
-    if (game.romData) {
-      navigate("/game", {
-        state: {
-          romData: game.romData,
-          gameTitle: game.title,
-        },
-      });
-    } else if (game.isUserGame && game.fileName) {
-      try {
-        const romData = await loadRomFromCache(game.fileName);
-        if (romData) {
-          navigate("/game", {
-            state: {
-              romData,
-              gameTitle: game.title,
-            },
-          });
-        } else {
-          setToast({
-            isVisible: true,
-            message: "게임 파일을 찾을 수 없습니다.",
-            type: "error",
-          });
-        }
-      } catch (error) {
-        console.error("롬 로드 실패:", error);
-        setToast({
-          isVisible: true,
-          message: "게임을 로드하는데 실패했습니다.",
-          type: "error",
-        });
-      }
-    } else {
-      setToast({
-        isVisible: true,
-        message: "게임을 플레이 할 수 없습니다.",
-        type: "error",
-      });
+    setSaveModal({ isOpen: true, game });
+  }
+
+  async function handleLoadSave(saveData) {
+    navigateToGame(saveData);
+  }
+
+  function handleCloseSaveModal() {
+    setSaveModal({ isOpen: false, game: null });
+  }
+
+  async function handleStartNewGame() {
+    navigateToGame(null);
+  }
+
+  async function navigateToGame(saveData) {
+    const game = saveModal.game;
+    console.log("game", game);
+    if (!game) return;
+
+    let romData = game.romData;
+    if (!romData && game.isUserGame && game.fileName) {
+      romData = await loadRomFromCache(game.fileName);
     }
+
+    navigate("/game", {
+      state: { romData, gameTitle: game.title, saveData },
+    });
   }
 
   async function handleDeleteGame(gameDelete) {
     if (!gameDelete.isUserGame) return;
-    try {
-      await deleteRomFromCache(gameDelete.fileName);
-      setGames((prevGames) => prevGames.filter((game) => game.id !== gameDelete.id));
-      setToast({
-        isVisible: true,
-        message: `${gameDelete.title} 게임이 삭제되었습니다.`,
-        type: "success",
-      });
-    } catch (error) {
-      console.error("게임 삭제 실패:", error);
-      setToast({ isVisible: true, message: "게임 삭제에 실패했습니다.", type: "error" });
-    }
+
+    await deleteRomFromCache(gameDelete.fileName);
+    setGames((prevGames) => prevGames.filter((game) => game.id !== gameDelete.id));
+    setToast({
+      isVisible: true,
+      message: `${gameDelete.title} 게임이 삭제되었습니다.`,
+      type: "success",
+    });
   }
 
   return (
@@ -208,6 +174,14 @@ function LibraryPage() {
         message={toast.message}
         type={toast.type}
         onClose={() => setToast({ ...toast, isVisible: false })}
+      />
+
+      <SaveLoadModal
+        isOpen={saveModal.isOpen}
+        onClose={handleCloseSaveModal}
+        gameTitle={saveModal.game?.title}
+        onLoadSave={handleLoadSave}
+        onStartNewGame={handleStartNewGame}
       />
 
       <input

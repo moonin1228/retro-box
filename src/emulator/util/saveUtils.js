@@ -1,6 +1,6 @@
 import useSaveStore from "@/stores/useSaveStore.js";
 
-export const saveCurrentState = async (cpu) => {
+export async function saveCurrentState(cpu) {
   const snapshot = {
     cpu: {
       register: { ...cpu.register },
@@ -12,13 +12,16 @@ export const saveCurrentState = async (cpu) => {
     memory: cpu.memory.getSnapshot(),
   };
 
-  const gameTitle = cpu.getGameName?.() || "UnknownGame";
+  const title = cpu.getGameName?.() || "UnknownGame";
+  const gameTitle = normalizeTitle(title);
 
   await useSaveStore.getState().saveState(gameTitle, snapshot);
-};
+}
 
-export const loadCurrentState = async (cpu) => {
-  const gameTitle = cpu.getGameName?.() || "UnknownGame";
+export async function loadCurrentState(cpu) {
+  const title = cpu.getGameName?.() || "UnknownGame";
+  const gameTitle = normalizeTitle(title);
+
   const currentSlot = useSaveStore.getState().currentSlot;
   const snapshot = await useSaveStore.getState().loadState(gameTitle, currentSlot);
 
@@ -31,4 +34,9 @@ export const loadCurrentState = async (cpu) => {
   cpu.memory.loadSnapshot(snapshot.memory);
 
   return true;
-};
+}
+
+function normalizeTitle(text) {
+  if (typeof text !== "string") return "";
+  return text.trim().toLowerCase().replace(/\s+/g, "");
+}
