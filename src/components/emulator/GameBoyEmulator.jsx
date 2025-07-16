@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 
 import EmulatorControls from "@/components/emulator/EmulatorControls.jsx";
-import VirtualGamepad from "@/components/VirtualGamepad.jsx";
+import VirtualGamepad from "@/components/emulator/VirtualGamepad.jsx";
 import { loadCurrentState, saveCurrentState } from "@/emulator/util/saveUtils.js";
 import useAutoSave from "@/hooks/useAutoSave.js";
 import useGameBoyInitializer from "@/hooks/useGameBoyInitializer.js";

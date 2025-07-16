@@ -21,8 +21,7 @@ function Toast({ message, type = "success", isVisible, onClose }) {
           ? "bg-yellow-500"
           : "bg-blue-500";
 
-  const icon =
-    type === "success" ? "✅" : type === "error" ? "❌" : type === "warning" ? "⚠️" : "ℹ️";
+  const icon = type === "success" ? "✅" : type === "error" ? "❌" : "";
 
   return (
     <div className="animate-slide-in fixed top-4 right-4 z-50">
