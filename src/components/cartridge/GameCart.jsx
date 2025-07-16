@@ -7,8 +7,10 @@ export async function createGameCartFromFile(file) {
   const romCacheStore = useRomCacheStore.getState();
 
   const cachedRom = await romCacheStore.loadRomFromCache(file.name);
+
   if (cachedRom) {
     const title = extractGameTitle(cachedRom);
+
     return {
       romData: cachedRom,
       title: title || file.name,
@@ -35,15 +37,19 @@ export async function createGameCartFromFile(file) {
 }
 
 function GameCart({ romData, title, onPlay, onDelete, isUserGame = false }) {
-  const gameTitle = (romData && extractGameTitle(romData)) || title || "Unknown Game";
+  const gameTitle = extractGameTitle(romData) || title || "Unknown Game";
 
   function handlePlay() {
-    if (onPlay && romData) onPlay(romData);
+    if (onPlay && romData) {
+      onPlay(romData);
+    }
   }
 
-  function handleDelete(e) {
-    e.stopPropagation();
-    if (onDelete) onDelete();
+  function handleDelete(event) {
+    event.stopPropagation();
+    if (onDelete) {
+      onDelete();
+    }
   }
 
   return (
@@ -67,7 +73,7 @@ function GameCart({ romData, title, onPlay, onDelete, isUserGame = false }) {
           type="button"
           title="게임 삭제"
         >
-          <FaRegTrashAlt size={16} />
+          <FaRegTrashAlt className="text-xl" />
         </button>
       )}
 

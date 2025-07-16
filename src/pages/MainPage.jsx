@@ -49,7 +49,6 @@ function MainPage() {
           <h1 className="animate-pulse bg-gradient-to-r from-purple-500 to-pink-300 bg-clip-text text-5xl font-black tracking-widest text-transparent text-white uppercase drop-shadow-[0_0_20px_rgba(147,51,234,0.8)] select-none sm:text-6xl md:text-7xl">
             레트로 박스
           </h1>
-
           {!isLoading ? (
             <button
               type="button"

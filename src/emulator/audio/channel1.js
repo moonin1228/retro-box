@@ -26,7 +26,7 @@ export const createChannel1 = (audioContext) => {
     gainNode: null,
     panNode: null,
     filter: null,
-    masterVolume: 5,
+    masterVolume: 0.5,
     leftEnabled: true,
     rightEnabled: true,
     dutyCycle: 2,
