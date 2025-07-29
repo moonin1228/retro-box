@@ -36,11 +36,11 @@
 
 ## 🚀 기술 스택
 
-- **Frontend**: React 19, Vite, Tailwind CSS
-- **상태 관리**: Zustand
-- **에뮬레이터**: 순수 JavaScript (Web Audio API)
-- **데이터 저장**: IndexedDB, LocalStorage
-- **테스팅**: Jest
+- **Frontend**: ![React](https://img.shields.io/badge/react-%2320232a.svg?style=for-the-badge&logo=react&logoColor=%2361DAFB) ![TailwindCSS](https://img.shields.io/badge/tailwindcss-%2338B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)
+- **상태 관리**: ![Zustand](https://img.shields.io/badge/Zustand-764ABC?style=for-the-badge&logo=redux&logoColor=white)
+- **에뮬레이터**: ![JavaScript](https://img.shields.io/badge/javascript-%23FFA500.svg?style=for-the-badge&logo=javascript&logoColor=%23FFFFFF)
+- **데이터 저장**: ![IndexedDB](https://img.shields.io/badge/IndexedDB-%2300BFFF.svg?style=for-the-badge&logo=databricks&logoColor=white)
+- **테스팅**: ![Jest](https://img.shields.io/badge/-jest-%23C21325?style=for-the-badge&logo=jest&logoColor=white)
 
 ---
 
@@ -55,37 +55,8 @@
 그러기 위해선, 게임 보이만의 메모리 맵을 구현해야했습니다.
 게임 보이 메모리 구조를 조사한 결과를 토대로 설계하여 코드를 작성하였습니다.
 
-
-```javascript
-// Game Boy 메모리 맵 구조
-const MEMORY_MAP = {
-  // ROM 영역 (0x0000-0x7FFF)
-  ROM_BANK_0: { start: 0x0000, end: 0x3fff, size: 16 * 1024 },
-  ROM_BANK_N: { start: 0x4000, end: 0x7fff, size: 16 * 1024 },
-
-  // VRAM 영역 (0x8000-0x9FFF)
-  VRAM: { start: 0x8000, end: 0x9fff, size: 8 * 1024 },
-
-  // External RAM 영역 (0xA000-0xBFFF)
-  EXTERNAL_RAM: { start: 0xa000, end: 0xbfff, size: 8 * 1024 },
-
-  // WRAM 영역 (0xC000-0xDFFF)
-  WRAM: { start: 0xc000, end: 0xdfff, size: 8 * 1024 },
-
-  // Echo RAM 영역 (0xE000-0xFDFF)
-  ECHO_RAM: { start: 0xe000, end: 0xfdff, size: 8 * 1024 },
-
-  // OAM 영역 (0xFE00-0xFE9F)
-  OAM: { start: 0xfe00, end: 0xfe9f, size: 160 },
-
-  // I/O 레지스터 영역 (0xFF00-0xFF7F)
-  IO_REGISTERS: { start: 0xff00, end: 0xff7f, size: 128 },
-
-  // HRAM 영역 (0xFF80-0xFFFF)
-  HRAM: { start: 0xff80, end: 0xffff, size: 127 },
-};
-```
-
+Game Boy 메모리 맵 구조 <br/>
+<img width="323" height="427" alt="memory-map" src="https://github.com/user-attachments/assets/2201f49b-dea5-4295-ae76-9d7cf723bf88" />
 
 그리고 각 메모리 영역마다 다른 접근 방식이 필요했습니다:
 
@@ -140,7 +111,7 @@ function writeByte(address, value) {
 }
 ```
 
-하지만 가장 복잡한 부분은 **MBC(Memory Bank Controller)**였습니다. MBC는 ROM 뱅킹과 RAM 뱅킹을 담당하는 하드웨어로, 게임의 크기에 따라 MBC1, MBC3 등 다양한 타입이 있었습니다.
+하지만 가장 복잡한 부분은 MBC(Memory Bank Controller)였습니다. MBC는 ROM 뱅킹과 RAM 뱅킹을 담당하는 하드웨어로, 게임의 크기에 따라 MBC1, MBC3 등 다양한 타입이 있었습니다.
 
 ```javascript
 // MBC1 구현
@@ -640,6 +611,11 @@ function handleWindowRendering() {
 ```
 
 윈도우의 WX 레지스터는 7을 빼야 실제 X 좌표가 되는 특이한 동작을 하며, 이는 많은 개발자들이 놓치는 부분이었습니다.
+
+| -7 하기 전 |-7 한 후 |
+|:------:|:-----:|
+| <img src="https://github.com/user-attachments/assets/e97ca2e2-589d-49e7-ac37-5d930d56163c" alt="Before" width="400" /> | <img src="https://github.com/user-attachments/assets/d344b728-8ef8-4ac3-bb3c-3adea79fdc1a" alt="After" width="400" /> |
+
 
 ### OAM 스캔 최적화 🎯
 
