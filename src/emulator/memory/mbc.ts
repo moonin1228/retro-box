@@ -1,12 +1,34 @@
 import UnimplementedException from "@/emulator/exception.js";
 import createExternalRam from "@/emulator/memory/externalRam.js";
 
-const makeMBC = (spec) => Object.freeze(spec);
+interface Memory {
+  loadRomBank(index: number): void;
+}
 
-const createMBC0 = (memory) => {
-  const externalRam = createExternalRam();
+interface ExternalRam {
+  loadRam(gameName: string, size: number): void;
+  setRamBank(bank: number): void;
+  write(offset: number, value: number): void;
+  read(offset: number): number;
+  save(): void;
+  getData(): any;
+  setData(data: any): void;
+}
 
-  const manageWrite = (addr, value) => {
+export interface MBC {
+  manageWrite(address: number, value: number): void;
+  readRam(address: number): number;
+  loadRam(game: string, size: number): void;
+  getState(): any;
+  setState(state: any): void;
+}
+
+const makeMBC = (specification: MBC): MBC => Object.freeze(specification);
+
+const createMBC0 = (memory: Memory): MBC => {
+  const externalRam: ExternalRam = createExternalRam();
+
+  const manageWrite = (addr: number, value: number): void => {
     memory.loadRomBank(value);
     if (addr >= 0xa000 && addr < 0xc000) {
       externalRam.write(addr - 0xa000, value);
@@ -16,26 +38,26 @@ const createMBC0 = (memory) => {
 
   return makeMBC({
     manageWrite,
-    readRam: (addr) => externalRam.read(addr - 0xa000),
-    loadRam: (game, size) => externalRam.loadRam(game, size),
+    readRam: (addr: number) => externalRam.read(addr - 0xa000),
+    loadRam: (game: string, size: number) => externalRam.loadRam(game, size),
     getState: () => ({
       externalRamData: externalRam.getData(),
     }),
-    setState: (state) => {
-      if (state.externalRamData) {
+    setState: (state: any) => {
+      if (state?.externalRamData) {
         externalRam.setData(state.externalRamData);
       }
     },
   });
 };
 
-const createMBC1 = (memory) => {
-  const externalRam = createExternalRam();
+const createMBC1 = (memory: Memory): MBC => {
+  const externalRam: ExternalRam = createExternalRam();
   let romBankNumber = 1;
   let mode = 0;
   let ramEnabled = true;
 
-  const manageWrite = (addr, value) => {
+  const manageWrite = (addr: number, value: number): void => {
     switch (addr & 0xf000) {
       case 0x0000:
       case 0x1000:
@@ -79,15 +101,15 @@ const createMBC1 = (memory) => {
 
   return makeMBC({
     manageWrite,
-    readRam: (addr) => externalRam.read(addr - 0xa000),
-    loadRam: (game, size) => externalRam.loadRam(game, size),
+    readRam: (addr: number) => externalRam.read(addr - 0xa000),
+    loadRam: (game: string, size: number) => externalRam.loadRam(game, size),
     getState: () => ({
       romBankNumber,
       mode,
       ramEnabled,
       externalRamData: externalRam.getData(),
     }),
-    setState: (state) => {
+    setState: (state: any) => {
       if (!state) return;
       romBankNumber = state.romBankNumber;
       mode = state.mode;
@@ -100,12 +122,12 @@ const createMBC1 = (memory) => {
   });
 };
 
-const createMBC3 = (memory) => {
-  const externalRam = createExternalRam();
+const createMBC3 = (memory: Memory): MBC => {
+  const externalRam: ExternalRam = createExternalRam();
   let romBankNumber = 1;
   let ramEnabled = true;
 
-  const manageWrite = (addr, value) => {
+  const manageWrite = (addr: number, value: number): void => {
     switch (addr & 0xf000) {
       case 0x0000:
       case 0x1000:
@@ -139,14 +161,14 @@ const createMBC3 = (memory) => {
 
   return makeMBC({
     manageWrite,
-    readRam: (addr) => externalRam.read(addr - 0xa000),
-    loadRam: (game, size) => externalRam.loadRam(game, size),
+    readRam: (addr: number) => externalRam.read(addr - 0xa000),
+    loadRam: (game: string, size: number) => externalRam.loadRam(game, size),
     getState: () => ({
       romBankNumber,
       ramEnabled,
       externalRamData: externalRam.getData(),
     }),
-    setState: (state) => {
+    setState: (state: any) => {
       if (!state) return;
       romBankNumber = state.romBankNumber;
       ramEnabled = state.ramEnabled;
@@ -160,7 +182,7 @@ const createMBC3 = (memory) => {
 
 const createMBC5 = createMBC3;
 
-const createMBC = (memory, type) => {
+const createMBC = (memory: Memory, type: number): MBC => {
   switch (type) {
     case 0x00:
       return createMBC0(memory);

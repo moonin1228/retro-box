@@ -1,5 +1,30 @@
-export const createChannel3 = (audioContext) => {
-  const state = {
+interface Channel3Registers {
+  NR30: number;
+  NR31: number;
+  NR32: number;
+  NR33: number;
+  NR34: number;
+}
+
+interface Channel3State {
+  enabled: boolean;
+  frequency: number;
+  oscillator: OscillatorNode | null;
+  gainNode: GainNode | null;
+
+  waveTable: Uint8Array;
+  waveTablePosition: number;
+  volumeCode: number;
+  masterVolume: number;
+
+  lengthCounter: number;
+  lengthEnabled: boolean;
+
+  registers: Channel3Registers;
+}
+
+export function createChannel3(audioContext: AudioContext | null) {
+  const state: Channel3State = {
     enabled: false,
     frequency: 0,
     oscillator: null,
@@ -22,7 +47,12 @@ export const createChannel3 = (audioContext) => {
     },
   };
 
-  const setupOscillator = () => {
+  function setupOscillator(): void {
+    if (!audioContext) {
+      console.error("[Channel3] audioContext가 null입니다.");
+      return;
+    }
+
     if (state.oscillator) {
       state.oscillator.disconnect();
       state.oscillator = null;
@@ -50,28 +80,33 @@ export const createChannel3 = (audioContext) => {
     state.gainNode.connect(audioContext.destination);
 
     state.oscillator.start();
-  };
+  }
 
-  const updateFrequency = () => {
-    if (!state.oscillator) return;
+  function updateFrequency() {
+    if (!state.oscillator || !audioContext) return;
 
     const realFrequency = 65536 / (2048 - state.frequency);
 
     if (realFrequency >= 20 && realFrequency <= 20000) {
       state.oscillator.frequency.setValueAtTime(realFrequency, audioContext.currentTime);
     }
-  };
+  }
 
-  const updateVolume = () => {
-    if (!state.gainNode) return;
+  function updateVolume() {
+    if (!state.gainNode || !audioContext) return;
     const volumeLevels = [0, 0.25, 0.5, 0.75];
     let volume = volumeLevels[state.volumeCode] || 0;
     volume *= state.masterVolume * 0.3;
 
     state.gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
-  };
+  }
 
-  const updateWaveTable = () => {
+  function updateWaveTable() {
+    if (!audioContext) {
+      console.error("[Channel3] audioContext가 null입니다.");
+      return;
+    }
+
     if (!state.oscillator) return;
 
     const real = new Float32Array(32);
@@ -89,9 +124,9 @@ export const createChannel3 = (audioContext) => {
     } catch (e) {
       console.error("[Channel3] 웨이브 테이블을 업데이트 하는데 실패했습니다.", e);
     }
-  };
+  }
 
-  const trigger = () => {
+  function trigger() {
     if (!state.oscillator || !state.gainNode) {
       setupOscillator();
     }
@@ -105,9 +140,9 @@ export const createChannel3 = (audioContext) => {
     updateFrequency();
 
     state.enabled = true;
-  };
+  }
 
-  const step = () => {
+  function step() {
     if (!state.enabled) return;
 
     if (state.lengthEnabled && state.lengthCounter > 0) {
@@ -116,15 +151,15 @@ export const createChannel3 = (audioContext) => {
         disable();
       }
     }
-  };
+  }
 
-  const enable = () => {
+  function enable() {
     if (!state.enabled) {
       trigger();
     }
-  };
+  }
 
-  const disable = () => {
+  function disable() {
     if (state.oscillator) {
       state.oscillator.disconnect();
       state.oscillator = null;
@@ -135,9 +170,9 @@ export const createChannel3 = (audioContext) => {
     }
     state.enabled = false;
     state.lengthCounter = 0;
-  };
+  }
 
-  const readRegister = (address) => {
+  function readRegister(address: number) {
     switch (address) {
       case 0xff1a:
         return state.registers.NR30;
@@ -152,9 +187,9 @@ export const createChannel3 = (audioContext) => {
       default:
         return 0xff;
     }
-  };
+  }
 
-  const writeRegister = (address, value) => {
+  function writeRegister(address: number, value: number) {
     switch (address) {
       case 0xff1a:
         state.registers.NR30 = value;
@@ -182,20 +217,20 @@ export const createChannel3 = (audioContext) => {
         updateFrequency();
         break;
     }
-  };
+  }
 
-  const readWaveTable = (address) => {
+  function readWaveTable(address: number) {
     const index = address - 0xff30;
     return state.waveTable[index];
-  };
+  }
 
-  const writeWaveTable = (address, value) => {
+  function writeWaveTable(address: number, value: number) {
     const index = address - 0xff30;
     state.waveTable[index] = value;
     if (state.enabled) {
       updateWaveTable();
     }
-  };
+  }
 
   return {
     writeRegister,
@@ -211,10 +246,10 @@ export const createChannel3 = (audioContext) => {
       }
     },
     disconnect: () => disable(),
-    setMasterVolume: (volume) => {
+    setMasterVolume: (volume: number) => {
       state.masterVolume = volume;
       updateVolume();
     },
     isEnabled: () => state.enabled,
   };
-};
+}

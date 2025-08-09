@@ -1,5 +1,7 @@
 export default class UnimplementedException extends Error {
-  constructor(message, fatal = false) {
+  fatal: boolean;
+
+  constructor(message: string, fatal: boolean = false) {
     super(message);
     this.name = "UnimplementedException";
     this.fatal = fatal;

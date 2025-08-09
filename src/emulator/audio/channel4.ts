@@ -4,7 +4,7 @@ import {
   setPanning,
   updateEnvelope,
   updateLength,
-} from "@/emulator/util/audioUtils.js";
+} from "@/emulator/util/audioUtils.ts";
 
 const CHANNEL4_CONSTANTS = {
   DIVISORS: [8, 16, 32, 48, 64, 80, 96, 112],
@@ -18,10 +18,61 @@ const CHANNEL4_CONSTANTS = {
     FREQUENCY: 2000,
     Q: 1.0,
   },
-};
+} as const;
 
-export const createChannel4 = (audioContext) => {
-  const state = {
+interface Channel4State {
+  enabled: boolean;
+  dacEnabled: boolean;
+  oscillator: AudioBufferSourceNode | null;
+  gainNode: GainNode | null;
+  panNode: StereoPannerNode | null;
+  filter: BiquadFilterNode | null;
+  noiseFilter: BiquadFilterNode | null;
+  masterVolume: number;
+  leftEnabled: boolean;
+  rightEnabled: boolean;
+  channelNumber: number;
+
+  envelopeStep: number;
+  envelopeTimer: number;
+  envelopeDirection: number;
+  envelopeVolume: number;
+
+  lengthCounter: number;
+  lengthEnabled: boolean;
+
+  shiftClock: number;
+  divisorCode: number;
+  widthMode: boolean;
+  lfsr: number;
+  cycleCount: number;
+
+  registers: {
+    NR41: number;
+    NR42: number;
+    NR43: number;
+    NR44: number;
+  };
+}
+
+interface Channel4Interface {
+  writeRegister(address: number, value: number): void;
+  readRegister(address: number): number;
+  step(cycles: number): void;
+  enable(): void;
+  disable(): void;
+  connect(): void;
+  disconnect(): void;
+  init(): void;
+  setMasterVolume(volume: number): void;
+  setPanning(left: boolean, right: boolean): void;
+  isEnabled(): boolean;
+  updateLength(): void;
+  updateEnvelope(): void;
+}
+
+export const createChannel4 = (audioContext: AudioContext): Channel4Interface => {
+  const state: Channel4State = {
     enabled: false,
     dacEnabled: false,
     oscillator: null,
@@ -44,8 +95,8 @@ export const createChannel4 = (audioContext) => {
 
     shiftClock: 0,
     divisorCode: 0,
-    widthMode: 0,
-    lfsr: CHANNEL4_CONSTANTS.LFSR.INITIAL,
+    widthMode: false,
+    lfsr: CHANNEL4_CONSTANTS.LFSR.INITIAL as number,
     cycleCount: 0,
 
     registers: {
@@ -56,7 +107,7 @@ export const createChannel4 = (audioContext) => {
     },
   };
 
-  const init = () => {
+  const init = (): void => {
     state.enabled = false;
     state.dacEnabled = false;
     state.envelopeVolume = 0;
@@ -69,7 +120,7 @@ export const createChannel4 = (audioContext) => {
     disconnectNodes(state, "Channel4");
   };
 
-  const forceStop = () => {
+  const forceStop = (): void => {
     try {
       if (state.oscillator) {
         state.oscillator.stop();
@@ -88,7 +139,7 @@ export const createChannel4 = (audioContext) => {
     }
   };
 
-  const setupNodes = () => {
+  const setupNodes = (): boolean => {
     try {
       disconnectNodes(state, "Channel4");
 
@@ -131,7 +182,7 @@ export const createChannel4 = (audioContext) => {
     }
   };
 
-  const setupOscillator = () => {
+  const setupOscillator = (): boolean => {
     try {
       if (!state.dacEnabled || !state.enabled) return false;
 
@@ -146,7 +197,7 @@ export const createChannel4 = (audioContext) => {
       const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
       const data = buffer.getChannelData(0);
 
-      let lfsr = CHANNEL4_CONSTANTS.LFSR.INITIAL;
+      let lfsr: number = CHANNEL4_CONSTANTS.LFSR.INITIAL;
       for (let i = 0; i < bufferSize; i++) {
         const xorResult = (lfsr & 1) ^ ((lfsr >> 1) & 1);
         lfsr = (lfsr >> 1) | (xorResult << 14);
@@ -166,9 +217,9 @@ export const createChannel4 = (audioContext) => {
         audioContext.currentTime,
       );
 
-      state.oscillator.connect(state.filter);
+      state.oscillator.connect(state.filter!);
       state.oscillator.start();
-      updateVolume(state, audioContext);
+      updateVolume();
       return true;
     } catch (error) {
       console.error("[Channel4] 오실레이터를 설정하는데 실패했습니다.", error);
@@ -177,7 +228,7 @@ export const createChannel4 = (audioContext) => {
     }
   };
 
-  const trigger = () => {
+  const trigger = (): void => {
     try {
       if (!state.dacEnabled) {
         forceStop();
@@ -201,7 +252,7 @@ export const createChannel4 = (audioContext) => {
     }
   };
 
-  const step = (cycles) => {
+  const step = (cycles: number): void => {
     if (!state.enabled || !state.dacEnabled) return;
 
     try {
@@ -221,7 +272,7 @@ export const createChannel4 = (audioContext) => {
       state.cycleCount = (state.cycleCount || 0) + cycles;
       if (state.cycleCount >= cyclesPerSample) {
         state.cycleCount -= cyclesPerSample;
-        updateVolume(state, audioContext);
+        updateVolume();
       }
     } catch (error) {
       console.error("[Channel4] step에서 발생한 오류입니다.", error);
@@ -229,7 +280,7 @@ export const createChannel4 = (audioContext) => {
     }
   };
 
-  const enable = () => {
+  const enable = (): void => {
     try {
       state.enabled = true;
       trigger();
@@ -238,7 +289,7 @@ export const createChannel4 = (audioContext) => {
     }
   };
 
-  const updateVolume = () => {
+  const updateVolume = (): void => {
     if (!state.gainNode) return;
 
     let volume = state.envelopeVolume / 15;
@@ -248,7 +299,7 @@ export const createChannel4 = (audioContext) => {
     state.gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
   };
 
-  const writeRegister = (addr, value) => {
+  const writeRegister = (addr: number, value: number): void => {
     try {
       switch (addr) {
         case 0xff20:
@@ -272,7 +323,7 @@ export const createChannel4 = (audioContext) => {
           state.envelopeTimer = state.envelopeStep;
 
           if (state.enabled && state.dacEnabled) {
-            updateVolume(state, audioContext);
+            updateVolume();
           }
           break;
         }
@@ -305,7 +356,7 @@ export const createChannel4 = (audioContext) => {
             if (!prevEnabled) {
               trigger();
             } else {
-              updateVolume(state, audioContext);
+              updateVolume();
             }
           } else if (state.lengthEnabled && state.lengthCounter === 0) {
             forceStop();
@@ -319,7 +370,7 @@ export const createChannel4 = (audioContext) => {
     }
   };
 
-  const readRegister = (addr) => {
+  const readRegister = (addr: number): number => {
     switch (addr) {
       case 0xff20:
         return state.registers.NR41;
@@ -334,14 +385,14 @@ export const createChannel4 = (audioContext) => {
     }
   };
 
-  const connect = () => {
+  const connect = (): void => {
     if (state.enabled) {
       setupNodes();
       setupOscillator();
     }
   };
 
-  const disconnect = () => {
+  const disconnect = (): void => {
     if (state.gainNode) {
       state.gainNode.gain.setValueAtTime(state.gainNode.gain.value, audioContext.currentTime);
       state.gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.05);
@@ -362,13 +413,13 @@ export const createChannel4 = (audioContext) => {
     connect,
     disconnect,
     init,
-    setMasterVolume: (volume) => {
+    setMasterVolume: (volume: number) => {
       state.masterVolume = volume;
       if (state.enabled && state.dacEnabled && state.gainNode) {
-        updateVolume(state, audioContext);
+        updateVolume();
       }
     },
-    setPanning: (left, right) => {
+    setPanning: (left: boolean, right: boolean) => {
       state.leftEnabled = left;
       state.rightEnabled = right;
       if (state.panNode) {
@@ -377,6 +428,6 @@ export const createChannel4 = (audioContext) => {
     },
     isEnabled: () => state.enabled && state.dacEnabled,
     updateLength: () => updateLength(state, audioContext),
-    updateEnvelope: () => updateEnvelope(state, audioContext),
+    updateEnvelope: () => updateEnvelope(state, audioContext, 0),
   };
 };
