@@ -1,13 +1,15 @@
+// @ts-nocheck
+
 import createApu from "@/emulator/audio/apu.ts";
-import createCPU from "@/emulator/cpu/cpu.js";
-import createTimer from "@/emulator/cpu/timer.js";
-import createGPU from "@/emulator/display/gpu.js";
-import createScreen from "@/emulator/display/screen.js";
+import createCPU from "@/emulator/cpu/cpu.ts";
+import createTimer from "@/emulator/cpu/timer.ts";
+import createGPU from "@/emulator/display/gpu";
+import createScreen from "@/emulator/display/screen.ts";
 import UnimplementedException from "@/emulator/exception.js";
 import createEmulatorMediator from "@/emulator/mediator/emulatorMediator.js";
 import createMemory from "@/emulator/memory/memory.js";
 import RomFileReader from "@/emulator/rom/file_reader.js";
-import createRom from "@/emulator/rom/rom.js";
+import createRom from "@/emulator/rom/rom.ts";
 import { saveCurrentState } from "@/emulator/util/saveUtils.js";
 import { merge } from "@/emulator/util/util.js";
 

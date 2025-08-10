@@ -1,30 +1,65 @@
-import { OAM_END, OAM_START, REG, TILEMAP } from "@/constants/gpuConstants.js";
-import { physics } from "@/emulator/display/screen.js";
-import Util from "@/emulator/util/util.js";
+import { OAM_END, OAM_START, REG, TILEMAP } from "@/constants/gpuConstants";
+import { physics } from "@/emulator/display/screen";
+import Util from "@/emulator/util/util";
 
-function createGPU(mediator) {
-  const memory = mediator.getComponent("memory");
+// --- 최소 인터페이스 (프로젝트에 정식 타입이 있으면 교체하세요) ---
+interface Memory {
+  vram(address: number): number;
+  ioRegister(address: number, value?: number): number | void;
+  oamram(address: number): number;
+}
+interface CPU {
+  requestInterrupt(id: number): void;
+  INTERRUPTS: { LCDC: number; VBLANK: number };
+}
+interface Screen {
+  render(buffer: number[]): void;
+}
+interface Mediator {
+  getComponent<T = unknown>(name: string): T | undefined;
+}
+
+type SpritePixel = { color: number; palette: number } | null;
+interface SpriteInfo {
+  x: number;
+  y: number;
+  idx: number;
+  flags: number;
+  priority: number;
+}
+interface SpriteState {
+  cache: Map<number, SpriteInfo[]>;
+  currentScanline: number;
+  pendingUpdates: Set<number>;
+}
+
+function createGPU(mediator: Mediator) {
+  const memory = mediator.getComponent<Memory>("memory")!;
   const vram = memory.vram.bind(memory);
   const ioRegister = memory.ioRegister.bind(memory);
   const oam = memory.oamram.bind(memory);
 
+  // 읽기/쓰기 헬퍼 (ioRegister의 return을 단언)
+  const readIO = (addr: number) => ioRegister(addr) as number;
+  const writeIO = (addr: number, val: number) => void ioRegister(addr, val);
+
   let clock = 0;
-  let mode = 2;
+  let mode: 0 | 1 | 2 | 3 = 2;
   let line = 0;
 
-  const buffer = new Array(physics.WIDTH * physics.HEIGHT);
-  const tileBuffer = new Array(8);
+  const buffer: number[] = new Array(physics.WIDTH * physics.HEIGHT).fill(0);
+  const tileBuffer: number[] = new Array(8).fill(0);
 
-  function drawPixel(x, y, colorValue) {
-    buffer[y * 160 + x] = colorValue & 3;
+  function drawPixel(x: number, y: number, colorValue: number) {
+    buffer[y * physics.WIDTH + x] = colorValue & 3;
   }
 
-  function getPalette(palette) {
+  function getPalette(palette: number) {
     return [palette & 3, (palette >> 2) & 3, (palette >> 4) & 3, (palette >> 6) & 3];
   }
 
-  function readTileData(tileIndex, tileBaseAddress, tileSize = 0x10) {
-    const tileBytes = [];
+  function readTileData(tileIndex: number, tileBaseAddress: number, tileSize = 0x10) {
+    const tileBytes: number[] = [];
     const start = tileBaseAddress + tileIndex * tileSize;
     for (let i = 0; i < tileSize; i++) {
       tileBytes.push(vram(start + i));
@@ -32,16 +67,14 @@ function createGPU(mediator) {
     return tileBytes;
   }
 
-  function drawTileLine(tileData, lineIndex, flipX = 0, flipY = 0) {
+  function drawTileLine(tileData: number[], lineIndex: number, flipX = 0, flipY = 0) {
     if (lineIndex < 0 || lineIndex >= 8) return;
 
     const selectedLine = flipY ? 7 - lineIndex : lineIndex;
     const lowByte = tileData[selectedLine * 2];
     const highByte = tileData[selectedLine * 2 + 1];
 
-    for (let i = 0; i < 8; i++) {
-      tileBuffer[i] = 0;
-    }
+    for (let i = 0; i < 8; i++) tileBuffer[i] = 0;
 
     for (let x = 0; x < 8; x++) {
       const bitIndex = 7 - x;
@@ -51,31 +84,31 @@ function createGPU(mediator) {
     }
   }
 
-  function copyTileLine(destination, tileLine, startX) {
+  function copyTileLine(destination: number[], tileLine: number[], startX: number) {
     for (let i = 0; i < 8; i++, startX++) {
       if (startX >= 0 && startX < physics.WIDTH) destination[startX] = tileLine[i];
     }
   }
 
-  function copyLineToBuffer(colorIndexLine, lineY) {
-    const backgroundPalette = getPalette(ioRegister(REG.BGP));
+  function copyLineToBuffer(colorIndexLine: number[], lineY: number) {
+    const backgroundPalette = getPalette(readIO(REG.BGP));
 
     for (let screenX = 0; screenX < physics.WIDTH; screenX++) {
-      const colorIndex = colorIndexLine[screenX];
+      const colorIndex = colorIndexLine[screenX] ?? 0;
       const colorValue = backgroundPalette[colorIndex];
       drawPixel(screenX, lineY, colorValue);
     }
   }
 
-  function drawBackground(LCDC, screenY, colorIndexLine) {
+  function drawBackground(LCDC: number, screenY: number, colorIndexLine: number[]) {
     if (!Util.readBit(LCDC, 0)) return;
 
     const tileMapStart = Util.readBit(LCDC, 3) ? TILEMAP.START_1 : TILEMAP.START_0;
     const tileDataBase = Util.readBit(LCDC, 4) ? 0x8000 : 0x8800;
     const useSignedTileIndex = !Util.readBit(LCDC, 4);
 
-    const scrollX = ioRegister(REG.SCX);
-    const scrollY = ioRegister(REG.SCY);
+    const scrollX = readIO(REG.SCX);
+    const scrollY = readIO(REG.SCY);
 
     const tileLineY = (screenY + scrollY) & 7;
     const tileRowIndex = (((screenY + scrollY) / 8) | 0) & 0x1f;
@@ -100,25 +133,22 @@ function createGPU(mediator) {
       }
 
       const tileData = readTileData(tileId, tileDataBase);
-
       drawTileLine(tileData, tileLineY);
-
       copyTileLine(colorIndexLine, tileBuffer, drawX);
-
       drawX += 8;
     }
 
     copyLineToBuffer(colorIndexLine, screenY);
   }
 
-  function drawWindow(LCDC) {
+  function drawWindow(LCDC: number) {
     if (!Util.readBit(LCDC, 5)) return;
 
     const tileMapStart = Util.readBit(LCDC, 6) ? TILEMAP.START_1 : TILEMAP.START_0;
     const tileDataStart = Util.readBit(LCDC, 4) ? 0x8000 : 0x8800;
     const signedIdx = !Util.readBit(LCDC, 4);
 
-    const windowPixelBuffer = new Array(256 * 256);
+    const windowPixelBuffer: number[] = new Array(256 * 256).fill(0);
 
     for (let tileMapIndex = 0; tileMapIndex < TILEMAP.LENGTH; tileMapIndex++) {
       let tileId = vram(tileMapStart + tileMapIndex);
@@ -133,8 +163,8 @@ function createGPU(mediator) {
       drawTile(tileData, tileX * 8, tileY * 8, windowPixelBuffer, 256);
     }
 
-    const windowX = ioRegister(REG.WX) - 7;
-    const windowY = ioRegister(REG.WY);
+    const windowX = readIO(REG.WX) - 7;
+    const windowY = readIO(REG.WY);
 
     const startX = Math.max(0, -windowX);
     const endX = Math.min(physics.WIDTH, physics.WIDTH - windowX);
@@ -150,12 +180,20 @@ function createGPU(mediator) {
         const tileMapY = y & 255;
 
         const bufferIndex = tileMapX + tileMapY * 256;
-        drawPixel(screenX, screenY, windowPixelBuffer[bufferIndex]);
+        drawPixel(screenX, screenY, windowPixelBuffer[bufferIndex] ?? 0);
       }
     }
   }
 
-  function drawTile(tileData, screenX, screenY, buffer, bufferWidth, flipX = 0, flipY = 0) {
+  function drawTile(
+    tileData: number[],
+    screenX: number,
+    screenY: number,
+    outBuffer: number[],
+    bufferWidth: number,
+    flipX = 0,
+    flipY = 0,
+  ) {
     let dataIndex = 0;
 
     for (let tileLineY = 0; tileLineY < 8; tileLineY++) {
@@ -171,18 +209,18 @@ function createGPU(mediator) {
         const pixelX = flipX ? 7 - tileLineX : tileLineX;
         const pixelIndex = (screenY + lineY) * bufferWidth + (screenX + pixelX);
 
-        buffer[pixelIndex] = colorValue;
+        outBuffer[pixelIndex] = colorValue;
       }
     }
   }
 
   function copySpriteTileLine(
-    lineBuffer,
-    spritePixelLine,
-    startX,
-    paletteIndex,
-    hasPriority,
-    backgroundLine,
+    lineBuffer: SpritePixel[],
+    spritePixelLine: number[],
+    startX: number,
+    paletteIndex: number,
+    hasPriority: number,
+    backgroundLine?: number[],
   ) {
     if (startX >= physics.WIDTH) return;
 
@@ -195,9 +233,9 @@ function createGPU(mediator) {
 
       if (spriteColor === 0) continue;
 
-      if (lineBuffer[screenX] && lineBuffer[screenX].color !== 0) continue;
+      if (lineBuffer[screenX] && lineBuffer[screenX]!.color !== 0) continue;
 
-      if (hasPriority && backgroundLine && backgroundLine[screenX] > 0) continue;
+      if (hasPriority && backgroundLine && (backgroundLine[screenX] ?? 0) > 0) continue;
 
       lineBuffer[screenX] = {
         color: spriteColor,
@@ -206,8 +244,8 @@ function createGPU(mediator) {
     }
   }
 
-  function copySpriteLineToBuffer(spriteLineBuffer, screenY) {
-    const spritePalettes = [getPalette(ioRegister(REG.OBP0)), getPalette(ioRegister(REG.OBP1))];
+  function copySpriteLineToBuffer(spriteLineBuffer: SpritePixel[], screenY: number) {
+    const spritePalettes = [getPalette(readIO(REG.OBP0)), getPalette(readIO(REG.OBP1))];
 
     for (let screenX = 0; screenX < physics.WIDTH; screenX++) {
       const spritePixel = spriteLineBuffer[screenX];
@@ -223,61 +261,61 @@ function createGPU(mediator) {
     }
   }
 
-  function drawScanLine(currentScanlineY) {
-    const lcdControl = ioRegister(REG.LCDC);
+  function drawScanLine(currentScanlineY: number) {
+    const lcdControl = readIO(REG.LCDC);
 
     if (!Util.readBit(lcdControl, 7)) return;
 
-    const colorIndexBuffer = new Array(physics.WIDTH);
+    const colorIndexBuffer: number[] = new Array(physics.WIDTH).fill(0);
 
     drawBackground(lcdControl, currentScanlineY, colorIndexBuffer);
     drawSprites(lcdControl, currentScanlineY, colorIndexBuffer);
   }
 
   function drawFrame() {
-    const lcdControl = ioRegister(REG.LCDC);
+    const lcdControl = readIO(REG.LCDC);
 
     if (Util.readBit(lcdControl, 7)) {
       drawWindow(lcdControl);
     }
 
-    const screenComponent = mediator.getComponent("screen");
+    const screenComponent = mediator.getComponent<Screen>("screen")!;
     screenComponent.render(buffer);
   }
 
   function updateLY() {
-    ioRegister(REG.LY, line);
+    writeIO(REG.LY, line);
 
-    const statValue = ioRegister(REG.STAT);
-    const currentLine = ioRegister(REG.LY);
-    const compareLine = ioRegister(REG.LYC);
+    const statValue = readIO(REG.STAT);
+    const currentLine = readIO(REG.LY);
+    const compareLine = readIO(REG.LYC);
 
     if (currentLine === compareLine) {
-      ioRegister(REG.STAT, statValue | 0x04);
+      writeIO(REG.STAT, statValue | 0x04);
 
       if (statValue & 0x40) {
-        const cpu = mediator.getComponent("cpu");
+        const cpu = mediator.getComponent<CPU>("cpu");
         if (cpu) cpu.requestInterrupt(cpu.INTERRUPTS.LCDC);
       }
     } else {
-      ioRegister(REG.STAT, statValue & ~0x04);
+      writeIO(REG.STAT, statValue & ~0x04);
     }
   }
 
-  function setMode(newMode) {
+  function setMode(newMode: 0 | 1 | 2 | 3) {
     mode = newMode;
 
-    const statRegister = ioRegister(REG.STAT) & 0b11111100;
-    ioRegister(REG.STAT, statRegister | newMode);
+    const statRegister = readIO(REG.STAT) & 0b11111100;
+    writeIO(REG.STAT, statRegister | newMode);
 
-    const interruptCondition = newMode < 3 && statRegister & (1 << (3 + newMode));
+    const interruptCondition = newMode < 3 && (statRegister & (1 << (3 + newMode))) !== 0;
     if (interruptCondition) {
-      const cpu = mediator.getComponent("cpu");
+      const cpu = mediator.getComponent<CPU>("cpu");
       if (cpu) cpu.requestInterrupt(cpu.INTERRUPTS.LCDC);
     }
   }
 
-  function update(deltaCycles) {
+  function update(deltaCycles: number): boolean {
     clock += deltaCycles;
     let isVBlank = false;
 
@@ -297,7 +335,7 @@ function createGPU(mediator) {
             setMode(1);
             isVBlank = true;
 
-            const cpu = mediator.getComponent("cpu");
+            const cpu = mediator.getComponent<CPU>("cpu");
             if (cpu) cpu.requestInterrupt(cpu.INTERRUPTS.VBLANK);
 
             drawFrame();
@@ -347,9 +385,9 @@ function createGPU(mediator) {
     return isVBlank;
   }
 
-  const spriteState = {
+  const spriteState: SpriteState = {
     cache: new Map(),
-    currentLine: 0,
+    currentScanline: 0,
     pendingUpdates: new Set(),
   };
 
@@ -366,14 +404,14 @@ function createGPU(mediator) {
     }
   }
 
-  function prepareSpriteData(currentScanlineY) {
+  function prepareSpriteData(currentScanlineY: number) {
     spriteState.currentScanline = currentScanlineY;
 
-    const lcdControl = ioRegister(REG.LCDC);
+    const lcdControl = readIO(REG.LCDC);
     if (!Util.readBit(lcdControl, 1)) return;
 
     const spriteHeight = Util.readBit(lcdControl, 2) ? 16 : 8;
-    const visibleSprites = [];
+    const visibleSprites: SpriteInfo[] = [];
 
     for (
       let oamAddress = OAM_START;
@@ -410,11 +448,11 @@ function createGPU(mediator) {
     spriteState.cache.set(currentScanlineY, visibleSprites);
   }
 
-  function drawSprites(lcdControl, scanlineY, bgColorBuffer) {
+  function drawSprites(lcdControl: number, scanlineY: number, bgColorBuffer: number[]) {
     if (!Util.readBit(lcdControl, 1)) return;
 
     const spriteHeight = Util.readBit(lcdControl, 2) ? 16 : 8;
-    const visibleSprites = [];
+    const visibleSprites: SpriteInfo[] = [];
 
     for (let oamAddr = OAM_START; oamAddr < OAM_END && visibleSprites.length < 10; oamAddr += 4) {
       const spriteY = oam(oamAddr) - 16;
@@ -444,8 +482,8 @@ function createGPU(mediator) {
       return spriteA.x - spriteB.x;
     });
 
-    const spriteLineBuffer = new Array(physics.WIDTH).fill(null);
-    const tileCache = new Map();
+    const spriteLineBuffer: SpritePixel[] = new Array(physics.WIDTH).fill(null);
+    const tileCache = new Map<number, number[]>();
 
     visibleSprites.forEach((sprite) => {
       const lineInTile = scanlineY - sprite.y;

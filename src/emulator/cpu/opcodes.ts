@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { cpuOps as ops } from "@/emulator/cpu/instructions.js";
 
 const map = {

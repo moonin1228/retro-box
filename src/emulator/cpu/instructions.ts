@@ -1,4 +1,5 @@
-import { opcodeCbmap } from "@/emulator/cpu/opcodes.js";
+// @ts-nocheck
+import { opcodeCbmap } from "@/emulator/cpu/opcodes.ts";
 import Util from "@/emulator/util/util.js";
 
 const ops = {
