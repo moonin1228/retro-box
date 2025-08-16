@@ -1,11 +1,15 @@
-# 🎮 Retro Box
+# 🎮 Retro Box 
+<p align="center">
+<img width="300" height="300" alt="ChatGPT Image 2025년 8월 16일 오후 01_28_20 (1)" src="https://github.com/user-attachments/assets/efd13ad1-671d-4dff-a92e-5c5068186a4b" />
+</p>
 
-> **레트로 게임 에뮬레이터**
+웹 브라우저에서 Game Boy 게임을 즐길 수 있는 **에뮬레이터 웹**입니다. 순수 JavaScript로 구현된 CPU, GPU, APU, 메모리 시스템을 통해 원본 하드웨어를 재현하면서도 웹 기술로 접근성을 높였습니다.
 
-웹 브라우저에서 Game Boy 게임을 즐길 수 있는 에뮬레이터입니다. 순수 JavaScript로 구현된 CPU, GPU, APU, 메모리 시스템을 통해 원본 하드웨어를 재현하면서도 웹 기술로 접근성을 높였습니다.
+---
 
 ## 📋 목차
 
+- [🎬 미리 보기](#-미리-보기)
 - [🎯 핵심 기능](#-핵심-기능)
 - [🚀 기술 스택](#-기술-스택)
 - [🎢 챌린지](#-challenges)
@@ -25,6 +29,57 @@
   - [사용자 인터페이스](#사용자-인터페이스)
 - [📚 기술적 세부사항](#-기술적-세부사항)
   - [아키텍처](#아키텍처)
+ 
+## 🎬 미리 보기
+<div align="center">
+  <table>
+    <thead>
+      <tr><th>초기 화면</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><img src="https://github.com/user-attachments/assets/3ce0cf0b-7f95-4143-a698-9316d4ada99d" alt="Before" width="500" /></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<div align="center">
+  <table>
+    <thead>
+      <tr><th>게임 파일 불러오기</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><img src="https://github.com/user-attachments/assets/bdc48490-1b37-4c32-814f-298f46c43329" alt="Before" width="500" /></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<div align="center">
+  <table>
+    <thead>
+      <tr><th>게임 플레이</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><img src="https://github.com/user-attachments/assets/315aeb32-759d-4320-83ec-b4cb85387ff6" alt="Before" width="500" /></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<div align="center">
+  <table>
+    <thead>
+      <tr><th>게임 저장</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><img src="https://github.com/user-attachments/assets/285f7d7b-18e6-46ba-bd61-40db94f8a017" alt="Before" width="500" /></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
 
 ## 🎯 핵심 기능
 
@@ -699,3 +754,4 @@ src/
 ```
 
 ---
+
