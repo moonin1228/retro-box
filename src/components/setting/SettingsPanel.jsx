@@ -7,7 +7,7 @@ import VolumeSetting from "@/components/setting/VolumeSetting.jsx";
 function SettingsPanel({ onClose, isOpen }) {
   return (
     <div
-      className={`setting-panel fixed top-0 right-0 h-full w-96 transform cursor-default overflow-y-auto bg-black/30 p-6 text-white shadow-xl backdrop-blur-md transition-transform duration-300 ease-in-out select-none ${
+      className={`setting-panel fixed top-0 right-0 z-50 h-full w-96 transform cursor-default overflow-y-auto bg-black/30 p-6 text-white shadow-xl backdrop-blur-md transition-transform duration-300 ease-in-out select-none ${
         isOpen ? "translate-x-0" : "translate-x-full"
       }`}
     >

@@ -1,10 +1,64 @@
 import { APU_CONSTANTS } from "@/constants/audioConstants.js";
-import { createChannel1 } from "@/emulator/audio/channel1.js";
-import { createChannel2 } from "@/emulator/audio/channel2.js";
-import { createChannel3 } from "@/emulator/audio/channel3.js";
-import { createChannel4 } from "@/emulator/audio/channel4.js";
+import { createChannel1 } from "@/emulator/audio/channel1.ts";
+import { createChannel2 } from "@/emulator/audio/channel2.ts";
+import { createChannel3 } from "@/emulator/audio/channel3.ts";
+import { createChannel4 } from "@/emulator/audio/channel4.ts";
 
-const handleChannelRegister = (channels, address, value) => {
+interface AudioChannel {
+  writeRegister(address: number, value: number): void;
+  readRegister(address: number): number;
+  step?(cycles: number): void;
+  enable?(): void;
+  disable?(): void;
+  connect?(): void;
+  disconnect?(): void;
+  init?(): void;
+  setMasterVolume?(volume: number): void;
+  setPanning?(left: boolean, right: boolean): void;
+  isEnabled?(): boolean;
+  updateLength?(): void;
+  updateSweep?(cycles?: number): void;
+  updateEnvelope?(): void;
+  clearBuffer?(): void;
+}
+
+interface Channels {
+  channel1: AudioChannel;
+  channel2: AudioChannel;
+  channel3: AudioChannel;
+  channel4: AudioChannel;
+}
+
+interface APUState {
+  audioContext: AudioContext | null;
+  channels: Channels | null;
+  initialized: boolean;
+  isConnected: boolean;
+  frameSequencer: number;
+  frameSequencerClock: number;
+  masterVolume: number;
+  init(): boolean;
+  reset(): void;
+}
+
+interface APURegisters {
+  NR50: number;
+  NR51: number;
+  NR52: number;
+}
+
+interface APUInterface {
+  writeRegister(address: number, value: number): void;
+  readRegister(address: number): number;
+  reset(): void;
+  step(cycles: number): void;
+  connect(): void;
+  disconnect(): void;
+  clearBuffer(): void;
+  getMasterVolume(): number;
+}
+
+function handleChannelRegister(channels: Channels, address: number, value: number): void {
   if (address >= 0xff10 && address <= 0xff14 && channels.channel1) {
     channels.channel1.writeRegister(address, value);
   } else if (address >= 0xff15 && address <= 0xff19 && channels.channel2) {
@@ -14,18 +68,23 @@ const handleChannelRegister = (channels, address, value) => {
   } else if (address >= 0xff1f && address <= 0xff23 && channels.channel4) {
     channels.channel4.writeRegister(address, value);
   }
-};
+}
 
-const getChannelStatus = (channels) => {
+function getChannelStatus(channels: Channels): number {
   let status = 0;
-  if (channels.channel1?.isEnabled()) status |= 0x01;
-  if (channels.channel2?.isEnabled()) status |= 0x02;
-  if (channels.channel3?.isEnabled()) status |= 0x04;
-  if (channels.channel4?.isEnabled()) status |= 0x08;
+  if (channels.channel1?.isEnabled?.()) status |= 0x01;
+  if (channels.channel2?.isEnabled?.()) status |= 0x02;
+  if (channels.channel3?.isEnabled?.()) status |= 0x04;
+  if (channels.channel4?.isEnabled?.()) status |= 0x08;
   return status;
-};
+}
 
-const handleNR52Write = (state, value, registers, channels) => {
+function handleNR52Write(
+  state: APUState,
+  value: number,
+  registers: APURegisters,
+  channels: Channels,
+): void {
   const wasEnabled = (registers.NR52 & 0x80) !== 0;
   const willBeEnabled = (value & 0x80) !== 0;
 
@@ -47,18 +106,18 @@ const handleNR52Write = (state, value, registers, channels) => {
     });
     state.reset();
   }
-};
+}
 
-const readChannelRegister = (channels, address) => {
+function readChannelRegister(channels: Channels, address: number): number {
   if (address >= 0xff10 && address <= 0xff14) return channels.channel1.readRegister(address);
   if (address >= 0xff15 && address <= 0xff19) return channels.channel2.readRegister(address);
   if (address >= 0xff1a && address <= 0xff1e) return channels.channel3.readRegister(address);
   if (address >= 0xff1f && address <= 0xff23) return channels.channel4.readRegister(address);
   return 0xff;
-};
+}
 
-const createApu = () => {
-  const state = {
+function createApu(): APUInterface {
+  const state: APUState = {
     audioContext: null,
     channels: null,
     initialized: false,
@@ -70,22 +129,22 @@ const createApu = () => {
     reset,
   };
 
-  const registers = {
+  const registers: APURegisters = {
     NR50: 0,
     NR51: 0,
     NR52: APU_CONSTANTS.INITIAL_NR52,
   };
 
-  const createAudioContext = () => {
+  function createAudioContext(): AudioContext | null {
     try {
-      return new (window.AudioContext || window.webkitAudioContext)();
+      return new (window.AudioContext || (window as any).webkitAudioContext)();
     } catch (error) {
       console.error("[APU] audioContext 생성에 실패했습니다.", error);
       return null;
     }
-  };
+  }
 
-  function init() {
+  function init(): boolean {
     try {
       if (state.initialized) return true;
 
@@ -102,7 +161,9 @@ const createApu = () => {
         channel4: createChannel4(state.audioContext),
       };
 
-      Object.values(state.channels).forEach((channel) => channel.init?.());
+      Object.values(state.channels).forEach((channel) => {
+        if (channel.init) channel.init();
+      });
 
       state.frameSequencer = 0;
       state.frameSequencerClock = 0;
@@ -116,7 +177,7 @@ const createApu = () => {
     }
   }
 
-  function reset() {
+  function reset(): void {
     try {
       if (!state.initialized && !init()) return;
 
@@ -148,7 +209,7 @@ const createApu = () => {
     }
   }
 
-  const clearBuffer = () => {
+  function clearBuffer(): void {
     if (!state.initialized || !state.channels) return;
 
     try {
@@ -165,9 +226,9 @@ const createApu = () => {
     } catch (error) {
       console.error("[APU] 버퍼 초기화 중 오류 발생:", error);
     }
-  };
+  }
 
-  const updateMasterVolume = () => {
+  function updateMasterVolume(): void {
     if (!state.initialized) return;
 
     const leftVol = ((registers.NR50 >> 4) & 0x7) / 7;
@@ -175,14 +236,14 @@ const createApu = () => {
     const masterVol = Math.max(leftVol, rightVol);
 
     state.masterVolume = masterVol;
-    Object.values(state.channels).forEach((channel) => {
+    Object.values(state.channels!).forEach((channel) => {
       if (channel && channel.setMasterVolume) {
         channel.setMasterVolume(masterVol);
       }
     });
-  };
+  }
 
-  const updatePanning = () => {
+  function updatePanning(): void {
     try {
       if (!state.initialized) return;
 
@@ -194,17 +255,17 @@ const createApu = () => {
         channel4: { left: 0x80, right: 0x08 },
       };
 
-      Object.entries(state.channels).forEach(([name, channel]) => {
+      Object.entries(state.channels!).forEach(([name, channel]) => {
         if (!channel.setPanning) return;
-        const mask = channelMasks[name];
+        const mask = channelMasks[name as keyof typeof channelMasks];
         channel.setPanning((value & mask.left) !== 0, (value & mask.right) !== 0);
       });
     } catch (error) {
       console.error("[APU] 패닝 업데이트 에러", error);
     }
-  };
+  }
 
-  const writeRegister = (address, value) => {
+  function writeRegister(address: number, value: number): void {
     if (!state.initialized && address !== APU_CONSTANTS.REGISTERS.NR52) {
       if (!init()) return;
     }
@@ -226,12 +287,12 @@ const createApu = () => {
           break;
 
         case APU_CONSTANTS.REGISTERS.NR52:
-          handleNR52Write(state, value, registers, state.channels);
+          handleNR52Write(state, value, registers, state.channels!);
           break;
 
         default:
           try {
-            handleChannelRegister(state.channels, address, value);
+            handleChannelRegister(state.channels!, address, value);
           } catch (error) {
             console.error(
               `[APU] 채널 레지스터에 쓰는 것을 실패했습니다. ${address.toString(16)}:`,
@@ -245,9 +306,9 @@ const createApu = () => {
         error,
       );
     }
-  };
+  }
 
-  const readRegister = (address) => {
+  function readRegister(address: number): number {
     try {
       if (!state.initialized) return 0xff;
 
@@ -256,7 +317,7 @@ const createApu = () => {
       }
 
       try {
-        const channelRegValue = readChannelRegister(state.channels, address);
+        const channelRegValue = readChannelRegister(state.channels!, address);
         if (channelRegValue !== 0xff) return channelRegValue;
       } catch (error) {
         console.error(
@@ -272,7 +333,7 @@ const createApu = () => {
         case APU_CONSTANTS.REGISTERS.NR51:
           return registers.NR51;
         case APU_CONSTANTS.REGISTERS.NR52:
-          return registers.NR52 | getChannelStatus(state.channels);
+          return registers.NR52 | getChannelStatus(state.channels!);
         default:
           return 0xff;
       }
@@ -283,9 +344,9 @@ const createApu = () => {
       );
       return 0xff;
     }
-  };
+  }
 
-  const step = (cycles) => {
+  function step(cycles: number): void {
     if (!state.initialized || !(registers.NR52 & 0x80)) return;
 
     try {
@@ -296,33 +357,33 @@ const createApu = () => {
         updateMasterVolume();
 
         if (APU_CONSTANTS.FRAME_SEQUENCER.LENGTH_COUNTER.includes(state.frameSequencer)) {
-          Object.values(state.channels).forEach((channel) => channel.updateLength?.());
+          Object.values(state.channels!).forEach((channel) => channel.updateLength?.());
         }
 
         if (APU_CONSTANTS.FRAME_SEQUENCER.SWEEP.includes(state.frameSequencer)) {
-          state.channels.channel1.updateSweep?.();
+          state.channels!.channel1.updateSweep?.();
         }
 
         if (APU_CONSTANTS.FRAME_SEQUENCER.ENVELOPE.includes(state.frameSequencer)) {
-          Object.values(state.channels).forEach((channel) => channel.updateEnvelope?.());
+          Object.values(state.channels!).forEach((channel) => channel.updateEnvelope?.());
         }
 
         state.frameSequencer = (state.frameSequencer + 1) & 7;
       }
 
-      Object.values(state.channels).forEach((channel) => channel.step?.(cycles));
+      Object.values(state.channels!).forEach((channel) => channel.step?.(cycles));
     } catch (error) {
       console.error("[APU] 채널 step 에러", error);
     }
-  };
+  }
 
-  const connect = () => {
+  function connect(): void {
     try {
       if (!state.initialized) {
         init();
       }
       if (!state.isConnected) {
-        Object.values(state.channels).forEach((channel) => {
+        Object.values(state.channels!).forEach((channel) => {
           if (channel.connect) channel.connect();
         });
         state.isConnected = true;
@@ -330,12 +391,12 @@ const createApu = () => {
     } catch (error) {
       console.error("[APU] 오디오 연결에 실패했습니다.", error);
     }
-  };
+  }
 
-  const disconnect = () => {
+  function disconnect(): void {
     try {
       if (state.isConnected) {
-        Object.values(state.channels).forEach((channel) => {
+        Object.values(state.channels!).forEach((channel) => {
           if (channel.disable) channel.disable();
           if (channel.disconnect) channel.disconnect();
         });
@@ -344,7 +405,7 @@ const createApu = () => {
     } catch (error) {
       console.error("[APU] 오디오 연결 해제를 실패했습니다.", error);
     }
-  };
+  }
 
   return {
     writeRegister,
@@ -356,6 +417,6 @@ const createApu = () => {
     clearBuffer,
     getMasterVolume: () => state.masterVolume,
   };
-};
+}
 
 export default createApu;

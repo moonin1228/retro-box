@@ -1,21 +1,39 @@
 /** @type {import('eslint').Linter.Config} */
 module.exports = {
   root: true,
-  extends: ["airbnb", "prettier", "plugin:import/recommended"],
-  plugins: ["react", "react-hooks", "jsx-a11y", "import", "simple-import-sort"],
+  extends: [
+    "airbnb", 
+    "prettier", 
+    "plugin:import/recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  plugins: [
+    "react", 
+    "react-hooks", 
+    "jsx-a11y", 
+    "import", 
+    "simple-import-sort",
+    "@typescript-eslint"
+  ],
+  parser: "@typescript-eslint/parser",
   parserOptions: {
     ecmaVersion: "latest",
     sourceType: "module",
     ecmaFeatures: { jsx: true },
+    project: "./tsconfig.json",
   },
   settings: {
     react: { version: "detect" },
     "import/resolver": {
+      typescript: {
+        alwaysTryTypes: true,
+        project: "./tsconfig.json",
+      },
       alias: {
         map: [["@", "./src"]],
-        extensions: [".js"],
+        extensions: [".js", ".jsx", ".ts", ".tsx"],
       },
-      node: { extensions: [".js"] },
+      node: { extensions: [".js", ".ts", ".jsx", ".tsx"] },
     },
   },
   env: { browser: true, node: true, es2023: true, jest: true },
@@ -58,12 +76,30 @@ module.exports = {
       "ignorePackages",
       {
         js: "always",
+        ts: "never",
+        tsx: "never",
       },
     ],
+    // TypeScript 관련 규칙 추가
+    "@typescript-eslint/no-unused-vars": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "@typescript-eslint/explicit-module-boundary-types": "off",
+    "@typescript-eslint/no-non-null-assertion": "off",
+    "@typescript-eslint/ban-ts-comment": "off",
+    "@typescript-eslint/no-unused-expressions": "off",
+    "no-void": "off",
+    "prefer-const": "off",
+    "arrow-body-style": "off",
   },
   overrides: [
     {
-      files: ["vite.config.*", "vite.*.config.*", "scripts/**"],
+      files: ["vite.config.*", "vite.*.config.*", "scripts/**", "tailwind.config.js"],
+      parser: "espree",
+      parserOptions: {
+        ecmaVersion: "latest",
+        sourceType: "module",
+      },
       rules: {
         "import/no-extraneous-dependencies": "off",
         "import/no-unresolved": "off",
@@ -74,6 +110,18 @@ module.exports = {
         "import/no-relative-packages": "off",
         "import/no-named-as-default": "off",
         "import/no-named-as-default-member": "off",
+      },
+    },
+    {
+      files: ["*.ts", "*.tsx"],
+      rules: {
+        "import/extensions": "off",
+      },
+    },
+    {
+      files: ["*.js", "*.jsx"],
+      rules: {
+        "import/extensions": "off",
       },
     },
   ],

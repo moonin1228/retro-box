@@ -1,5 +1,6 @@
-import { opcodeCbmap } from "@/emulator/cpu/opcodes.js";
-import Util from "@/emulator/util/util.js";
+// @ts-nocheck
+import { opcodeCbmap } from "@/emulator/cpu/opcodes.ts";
+import Util from "@/emulator/util/util";
 
 const ops = {
   LDrrnn(p, r1, r2) {

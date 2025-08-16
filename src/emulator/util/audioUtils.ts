@@ -1,3 +1,21 @@
+interface AudioState {
+  oscillator: OscillatorNode | AudioBufferSourceNode | null;
+  filter: BiquadFilterNode | null;
+  panNode: StereoPannerNode | null;
+  gainNode: GainNode | null;
+  masterVolume: number;
+  leftEnabled: boolean;
+  rightEnabled: boolean;
+  envelopeVolume: number;
+  frequency?: number;
+  enabled: boolean;
+  lengthCounter: number;
+  lengthEnabled: boolean;
+  envelopeTimer: number;
+  envelopeStep?: number;
+  envelopeDirection?: number;
+}
+
 export const AUDIO_CONSTANTS = {
   FILTER: {
     FREQUENCY: 5300,
@@ -11,13 +29,13 @@ export const AUDIO_CONSTANTS = {
     MIN: 20,
     MAX: 20000,
   },
-};
+} as const;
 
-export const disconnectNodes = (state, channelName) => {
+export const disconnectNodes = (state: AudioState, channelName: string): void => {
   try {
     [state.oscillator, state.filter, state.panNode, state.gainNode].forEach((node) => {
       if (node) {
-        if (node.stop) node.stop();
+        if ('stop' in node) node.stop();
         node.disconnect();
       }
     });
@@ -27,7 +45,7 @@ export const disconnectNodes = (state, channelName) => {
   }
 };
 
-export const setupNodes = (state, audioContext, channelName) => {
+export const setupNodes = (state: AudioState, audioContext: AudioContext, channelName: string): void => {
   try {
     disconnectNodes(state, channelName);
 
@@ -46,7 +64,7 @@ export const setupNodes = (state, audioContext, channelName) => {
   }
 };
 
-export const updateVolume = (state, audioContext) => {
+export const updateVolume = (state: AudioState, audioContext: AudioContext): void => {
   if (!state.gainNode) return;
   let volume = Math.max(0, Math.min(state.envelopeVolume, AUDIO_CONSTANTS.VOLUME.MAX));
   volume =
@@ -54,7 +72,7 @@ export const updateVolume = (state, audioContext) => {
   state.gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
 };
 
-export const setPanning = (state, audioContext) => {
+export const setPanning = (state: AudioState, audioContext: AudioContext): void => {
   if (!state.panNode) return;
 
   let panValue = 0;
@@ -67,8 +85,8 @@ export const setPanning = (state, audioContext) => {
   state.panNode.pan.setValueAtTime(panValue, audioContext.currentTime);
 };
 
-export const updateFrequency = (state, audioContext, divider = 32) => {
-  if (!state.oscillator) return;
+export const updateFrequency = (state: AudioState, audioContext: AudioContext, divider = 32): void => {
+  if (!state.oscillator || !('frequency' in state.oscillator) || state.frequency === undefined) return;
 
   const realFrequency = 4194304 / divider / (2048 - state.frequency);
   if (
@@ -79,7 +97,7 @@ export const updateFrequency = (state, audioContext, divider = 32) => {
   }
 };
 
-export const disableChannel = (state, channelName, audioContext) => {
+export const disableChannel = (state: AudioState, channelName: string, audioContext: AudioContext): void => {
   if (state.gainNode) {
     state.gainNode.gain.setValueAtTime(state.gainNode.gain.value, audioContext.currentTime);
     state.gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.05);
@@ -94,25 +112,43 @@ export const disableChannel = (state, channelName, audioContext) => {
   state.envelopeTimer = 0;
 };
 
-export const updateLength = (state, audioContext) => {
+export const updateLength = (state: AudioState, audioContext?: AudioContext): void => {
   if (state.lengthEnabled && state.lengthCounter > 0) {
     state.lengthCounter--;
     if (state.lengthCounter === 0) {
-      disableChannel(state, `Channel${state.channelNumber}`, audioContext);
+      state.enabled = false;
+      if (state.gainNode) {
+        state.gainNode.gain.setValueAtTime(state.gainNode.gain.value, audioContext?.currentTime || 0);
+        state.gainNode.gain.linearRampToValueAtTime(0, (audioContext?.currentTime || 0) + 0.05);
+      }
     }
   }
 };
 
-export const updateEnvelope = (state, audioContext, cycles) => {
-  if (state.envelopeStep > 0) {
-    state.envelopeTimer -= cycles;
-    if (state.envelopeTimer <= 0) {
-      state.envelopeTimer = state.envelopeStep;
-      const newVolume = state.envelopeVolume + state.envelopeDirection;
-      if (newVolume >= 0 && newVolume <= AUDIO_CONSTANTS.VOLUME.MAX) {
-        state.envelopeVolume = newVolume;
-        updateVolume(state, audioContext);
+export const updateEnvelope = (state: AudioState, audioContext: AudioContext, cycles: number): void => {
+  if (!state.enabled || state.envelopeStep === undefined || state.envelopeDirection === undefined) return;
+
+  state.envelopeTimer += cycles;
+  const envelopePeriod = state.envelopeStep === 0 ? 8 : state.envelopeStep * 8;
+
+  if (state.envelopeTimer >= envelopePeriod) {
+    state.envelopeTimer = 0;
+
+    if (state.envelopeDirection > 0) {
+      if (state.envelopeVolume < AUDIO_CONSTANTS.VOLUME.MAX) {
+        state.envelopeVolume++;
+      }
+    } else if (state.envelopeDirection < 0) {
+      if (state.envelopeVolume > 0) {
+        state.envelopeVolume--;
+      } else {
+        state.enabled = false;
+        if (state.gainNode) {
+          state.gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        }
       }
     }
+
+    updateVolume(state, audioContext);
   }
 };

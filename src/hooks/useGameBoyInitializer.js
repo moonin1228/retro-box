@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-import createGameBoy from "@/emulator/gameBoy.js";
+import createGameBoy from "@/emulator/gameBoy";
 
 function useGameBoyInitializer(
   canvasRef,

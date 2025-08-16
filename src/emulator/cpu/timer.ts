@@ -1,4 +1,4 @@
-function createTimer(mediator) {
+function createTimer(mediator: any) {
   const DIV = 0xff04;
   const TIMA = 0xff05;
   const TMA = 0xff06;
@@ -7,7 +7,7 @@ function createTimer(mediator) {
   let timerCounter = 0;
   let dividerCounter = 0;
 
-  function updateTimer(elapsed) {
+  function updateTimer(elapsed: number): void {
     const memory = mediator.getComponent("memory");
     if (!memory || !(memory.readByte(TAC) & 0x04)) return;
 
@@ -31,7 +31,7 @@ function createTimer(mediator) {
     }
   }
 
-  function updateDiv(elapsedCycles) {
+  function updateDiv(elapsedCycles: number): void {
     const memory = mediator.getComponent("memory");
     if (!memory) return;
 
@@ -44,12 +44,12 @@ function createTimer(mediator) {
     }
   }
 
-  function update(elapsedCycles) {
+  function update(elapsedCycles: number): void {
     updateDiv(elapsedCycles);
     updateTimer(elapsedCycles);
   }
 
-  function resetDiv() {
+  function resetDiv(): void {
     const memory = mediator.getComponent("memory");
     if (!memory) return;
 
@@ -61,3 +61,6 @@ function createTimer(mediator) {
 }
 
 export default createTimer;
+
+
+

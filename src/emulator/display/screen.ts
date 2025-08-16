@@ -1,21 +1,32 @@
-export const colors = [
+export const colors: number[][] = [
   [0xff, 0xff, 0xff],
   [0xaa, 0xaa, 0xaa],
   [0x55, 0x55, 0x55],
   [0x00, 0x00, 0x00],
 ];
 
-export const physics = {
+export const physics: { WIDTH: number; HEIGHT: number; FREQUENCY: number } = {
   WIDTH: 160,
   HEIGHT: 144,
   FREQUENCY: 60,
 };
 
-const createScreen = (canvas, pixelSize = 1) => {
-  const ctx = canvas.getContext("2d");
-  const state = { pixelSize, imageData: null };
+export interface ScreenInstance {
+  canvas: HTMLCanvasElement;
+  setPixelSize(size: number): void;
+  clearScreen(): void;
+  render(buffer: number[]): void;
+}
 
-  const initImageData = () => {
+const createScreen = (canvas: HTMLCanvasElement, pixelSize: number = 1): ScreenInstance => {
+  const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+
+  let state: { pixelSize: number; imageData: ImageData } = {
+    pixelSize,
+    imageData: new ImageData(1, 1),
+  };
+
+  const initImageData = (): void => {
     canvas.width = physics.WIDTH * state.pixelSize;
     canvas.height = physics.HEIGHT * state.pixelSize;
 
@@ -24,17 +35,17 @@ const createScreen = (canvas, pixelSize = 1) => {
     state.imageData = img;
   };
 
-  const setPixelSize = (size) => {
+  const setPixelSize = (size: number): void => {
     state.pixelSize = size;
     initImageData();
   };
 
-  const clearScreen = () => {
+  const clearScreen = (): void => {
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   };
 
-  const fillImageData = (buffer) => {
+  const fillImageData = (buffer: number[]): void => {
     const { pixelSize } = state;
     const { WIDTH, HEIGHT } = physics;
     const imgData = state.imageData.data;
@@ -57,7 +68,7 @@ const createScreen = (canvas, pixelSize = 1) => {
     }
   };
 
-  const render = (buffer) => {
+  const render = (buffer: number[]): void => {
     fillImageData(buffer);
     ctx.putImageData(state.imageData, 0, 0);
   };
@@ -73,3 +84,8 @@ const createScreen = (canvas, pixelSize = 1) => {
 };
 
 export default createScreen;
+
+
+
+
+

@@ -5,7 +5,7 @@ import {
   getGameSaveStates,
   loadGameState,
   saveGameState,
-} from "@/emulator/util/indexedDBUtils.js";
+} from "@/emulator/util/indexedDBUtils";
 
 const useSaveStore = create((set, get) => ({
   saveStates: {},

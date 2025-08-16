@@ -1,6 +1,19 @@
 import useSaveStore from "@/stores/useSaveStore.js";
 
-export async function saveCurrentState(cpu) {
+export interface CpuLike {
+  register: Record<string, any>;
+  clock: { cycles: number };
+  isInterruptMasterEnabled: boolean;
+  isHalted: boolean;
+  isPaused: boolean;
+  memory: {
+    getSnapshot: () => unknown;
+    loadSnapshot: (snapshot: unknown) => void;
+  };
+  getGameName?: () => string;
+}
+
+export async function saveCurrentState(cpu: CpuLike): Promise<void> {
   const snapshot = {
     cpu: {
       register: { ...cpu.register },
@@ -18,12 +31,12 @@ export async function saveCurrentState(cpu) {
   await useSaveStore.getState().saveState(gameTitle, snapshot);
 }
 
-export async function loadCurrentState(cpu) {
+export async function loadCurrentState(cpu: CpuLike): Promise<boolean> {
   const title = cpu.getGameName?.() || "UnknownGame";
   const gameTitle = normalizeTitle(title);
 
   const currentSlot = useSaveStore.getState().currentSlot;
-  const snapshot = await useSaveStore.getState().loadState(gameTitle, currentSlot);
+  const snapshot: any = await useSaveStore.getState().loadState(gameTitle, currentSlot);
 
   Object.assign(cpu.register, snapshot.cpu.register);
   cpu.clock.cycles = snapshot.cpu.clock.cycles;
@@ -36,7 +49,12 @@ export async function loadCurrentState(cpu) {
   return true;
 }
 
-function normalizeTitle(text) {
+function normalizeTitle(text: unknown): string {
   if (typeof text !== "string") return "";
   return text.trim().toLowerCase().replace(/\s+/g, "");
 }
+
+
+
+
+

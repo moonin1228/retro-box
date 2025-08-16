@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 
 import EmulatorControls from "@/components/emulator/EmulatorControls.jsx";
 import VirtualGamepad from "@/components/emulator/VirtualGamepad.jsx";
-import { loadCurrentState, saveCurrentState } from "@/emulator/util/saveUtils.js";
+import { loadCurrentState, saveCurrentState } from "@/emulator/util/saveUtils";
 import useAutoSave from "@/hooks/useAutoSave.js";
 import useGameBoyInitializer from "@/hooks/useGameBoyInitializer.js";
 import useGameBoyInputBinding from "@/hooks/useGameBoyInputBinding.js";

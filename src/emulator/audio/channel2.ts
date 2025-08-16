@@ -7,7 +7,7 @@ import {
   updateFrequency,
   updateLength,
   updateVolume,
-} from "@/emulator/util/audioUtils.js";
+} from "@/emulator/util/audioUtils.ts";
 
 const CHANNEL2_CONSTANTS = {
   DUTY_PATTERNS: [
@@ -16,10 +16,54 @@ const CHANNEL2_CONSTANTS = {
     [1, 1, 1, 1, 0, 0, 0, 0],
     [0, 1, 1, 1, 1, 1, 1, 0],
   ],
-};
+} as const;
 
-export const createChannel2 = (audioContext) => {
-  const state = {
+interface Channel2State {
+  enabled: boolean;
+  frequency: number;
+  oscillator: OscillatorNode | null;
+  gainNode: GainNode | null;
+  panNode: StereoPannerNode | null;
+  filter: BiquadFilterNode | null;
+  masterVolume: number;
+  leftEnabled: boolean;
+  rightEnabled: boolean;
+  dutyCycle: number;
+  channelNumber: number;
+
+  envelopeStep: number;
+  envelopeTimer: number;
+  envelopeDirection: number;
+  envelopeVolume: number;
+
+  lengthCounter: number;
+  lengthEnabled: boolean;
+
+  registers: {
+    NR21: number;
+    NR22: number;
+    NR23: number;
+    NR24: number;
+  };
+}
+
+interface Channel2Interface {
+  writeRegister(address: number, value: number): void;
+  readRegister(address: number): number;
+  step(cycles: number): void;
+  enable(): void;
+  disable(): void;
+  connect(): void;
+  disconnect(): void;
+  setMasterVolume(volume: number): void;
+  setPanning(left: boolean, right: boolean): void;
+  isEnabled(): boolean;
+  updateLength(): void;
+  updateEnvelope(): void;
+}
+
+export function createChannel2(audioContext: AudioContext): Channel2Interface {
+  const state: Channel2State = {
     enabled: false,
     frequency: 0,
     oscillator: null,
@@ -48,7 +92,7 @@ export const createChannel2 = (audioContext) => {
     },
   };
 
-  const updateDutyCycle = () => {
+  function updateDutyCycle(): void {
     if (!state.oscillator) return;
 
     try {
@@ -66,9 +110,9 @@ export const createChannel2 = (audioContext) => {
     } catch (error) {
       console.error("[Channel2] 듀티 사이클을 업데이트 하는데 실패했습니다.", error);
     }
-  };
+  }
 
-  const setupOscillator = () => {
+  function setupOscillator(): void {
     try {
       if (!state.gainNode) setupNodes(state, audioContext, "Channel2");
       if (state.oscillator) {
@@ -77,7 +121,7 @@ export const createChannel2 = (audioContext) => {
       }
 
       state.oscillator = audioContext.createOscillator();
-      state.oscillator.connect(state.filter);
+      state.oscillator.connect(state.filter!);
       updateDutyCycle();
       updateFrequency(state, audioContext);
       updateVolume(state, audioContext);
@@ -86,9 +130,9 @@ export const createChannel2 = (audioContext) => {
       console.error("[Channel2] 오실레이터를 설정하는데 실패했습니다.", error);
       state.oscillator = null;
     }
-  };
+  }
 
-  const trigger = () => {
+  function trigger(): void {
     if (!state.oscillator) setupOscillator();
     if (state.lengthCounter === 0) {
       state.lengthCounter = 64 - (state.registers.NR21 & 0x3f);
@@ -103,23 +147,23 @@ export const createChannel2 = (audioContext) => {
     updateDutyCycle();
     updateVolume(state, audioContext);
     updateFrequency(state, audioContext);
-  };
+  }
 
-  const step = (cycles) => {
+  function step(cycles: number): void {
     if (!state.enabled) return;
     updateLength(state, audioContext);
     updateEnvelope(state, audioContext, cycles);
-  };
+  }
 
-  const enable = () => {
+  function enable(): void {
     if (!state.enabled) trigger();
-  };
+  }
 
-  const disable = () => {
+  function disable(): void {
     disableChannel(state, "Channel2", audioContext);
-  };
+  }
 
-  const readRegister = (address) => {
+  function readRegister(address: number): number {
     switch (address) {
       case 0xff16:
         return state.registers.NR21;
@@ -132,9 +176,9 @@ export const createChannel2 = (audioContext) => {
       default:
         return 0xff;
     }
-  };
+  }
 
-  const writeRegister = (address, value) => {
+  function writeRegister(address: number, value: number): void {
     switch (address) {
       case 0xff16:
         state.registers.NR21 = value;
@@ -160,16 +204,16 @@ export const createChannel2 = (audioContext) => {
         updateFrequency(state, audioContext);
         break;
     }
-  };
+  }
 
-  const connect = () => {
+  function connect(): void {
     if (state.enabled) {
       setupNodes(state, audioContext, "Channel2");
       setupOscillator();
     }
-  };
+  }
 
-  const disconnect = () => {
+  function disconnect(): void {
     if (state.gainNode) {
       state.gainNode.gain.setValueAtTime(state.gainNode.gain.value, audioContext.currentTime);
       state.gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.05);
@@ -179,7 +223,7 @@ export const createChannel2 = (audioContext) => {
     } else {
       disconnectNodes(state, "Channel2");
     }
-  };
+  }
 
   return {
     writeRegister,
@@ -189,17 +233,17 @@ export const createChannel2 = (audioContext) => {
     disable,
     connect,
     disconnect,
-    setMasterVolume: (volume) => {
+    setMasterVolume: (volume: number) => {
       state.masterVolume = volume;
       updateVolume(state, audioContext);
     },
-    setPanning: (left, right) => {
+    setPanning: (left: boolean, right: boolean) => {
       state.leftEnabled = left;
       state.rightEnabled = right;
       setPanning(state, audioContext);
     },
     isEnabled: () => state.enabled,
     updateLength: () => updateLength(state),
-    updateEnvelope: () => updateEnvelope(state, audioContext),
+    updateEnvelope: () => updateEnvelope(state, audioContext, 0),
   };
-};
+}

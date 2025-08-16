@@ -1,4 +1,4 @@
-export const extractGameTitle = (romData) => {
+export function extractGameTitle(romData: Uint8Array): string {
   let title = "";
   for (let i = 0x134; i < 0x143; i++) {
     const char = romData[i];
@@ -6,4 +6,11 @@ export const extractGameTitle = (romData) => {
     title += String.fromCharCode(char);
   }
   return title.trim();
-};
+}
+
+export default extractGameTitle;
+
+
+
+
+

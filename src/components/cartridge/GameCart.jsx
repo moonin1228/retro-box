@@ -1,6 +1,6 @@
 import { FaRegTrashAlt } from "react-icons/fa";
 
-import { extractGameTitle } from "@/emulator/util/romUtils.js";
+import { extractGameTitle } from "@/emulator/util/romUtils";
 import useRomCacheStore from "@/stores/useRomCacheStore.js";
 
 export async function createGameCartFromFile(file) {

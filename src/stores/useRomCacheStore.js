@@ -5,7 +5,7 @@ import {
   getRomCacheInfo,
   loadRomFromCache,
   saveRomToCache,
-} from "@/emulator/util/indexedDBUtils.js";
+} from "@/emulator/util/indexedDBUtils";
 
 const useRomCacheStore = create((set, get) => ({
   romCache: {},

@@ -7,7 +7,7 @@ import {
   updateFrequency,
   updateLength,
   updateVolume,
-} from "@/emulator/util/audioUtils.js";
+} from "@/emulator/util/audioUtils.ts";
 
 const CHANNEL1_CONSTANTS = {
   DUTY_PATTERNS: [
@@ -16,10 +16,64 @@ const CHANNEL1_CONSTANTS = {
     [1, 1, 1, 1, 0, 0, 0, 0],
     [0, 1, 1, 1, 1, 1, 1, 0],
   ],
-};
+} as const;
 
-export const createChannel1 = (audioContext) => {
-  const state = {
+interface Channel1State {
+  enabled: boolean;
+  frequency: number;
+  oscillator: OscillatorNode | null;
+  gainNode: GainNode | null;
+  panNode: StereoPannerNode | null;
+  filter: BiquadFilterNode | null;
+  masterVolume: number;
+  leftEnabled: boolean;
+  rightEnabled: boolean;
+  dutyCycle: number;
+  channelNumber: number;
+
+  envelopeStep: number;
+  envelopeTimer: number;
+  envelopeDirection: number;
+  envelopeVolume: number;
+
+  sweepEnabled: boolean;
+  sweepTimer: number;
+  sweepTime: number;
+  sweepDirection: number;
+  sweepShift: number;
+  shadowFrequency: number;
+
+  lengthCounter: number;
+  lengthEnabled: boolean;
+
+  registers: {
+    NR10: number;
+    NR11: number;
+    NR12: number;
+    NR13: number;
+    NR14: number;
+  };
+}
+
+interface Channel1Interface {
+  writeRegister(address: number, value: number): void;
+  readRegister(address: number): number;
+  step(cycles: number): void;
+  enable(): void;
+  disable(): void;
+  connect(): void;
+  disconnect(): void;
+  setMasterVolume(volume: number): void;
+  setPanning(left: boolean, right: boolean): void;
+  isEnabled(): boolean;
+  updateLength(): void;
+  updateSweep(cycles: number): void;
+  updateEnvelope(): void;
+  clearBuffer(): void;
+}
+
+export function createChannel1(audioContext: AudioContext): Channel1Interface {
+  const state: Channel1State = {
     enabled: false,
     frequency: 0,
     oscillator: null,
@@ -56,7 +110,7 @@ export const createChannel1 = (audioContext) => {
     },
   };
 
-  const updateDutyCycle = () => {
+  function updateDutyCycle(): void {
     if (!state.oscillator) return;
 
     try {
@@ -74,9 +128,9 @@ export const createChannel1 = (audioContext) => {
     } catch (error) {
       console.error("[Channel1] 듀티 사이클을 업데이트 하는데 실패했습니다.", error);
     }
-  };
+  }
 
-  const setupOscillator = () => {
+  function setupOscillator(): void {
     try {
       if (!state.gainNode) setupNodes(state, audioContext, "Channel1");
       if (state.oscillator) {
@@ -85,7 +139,7 @@ export const createChannel1 = (audioContext) => {
       }
 
       state.oscillator = audioContext.createOscillator();
-      state.oscillator.connect(state.filter);
+      state.oscillator.connect(state.filter!);
       updateDutyCycle();
       updateFrequency(state, audioContext);
       updateVolume(state, audioContext);
@@ -94,9 +148,9 @@ export const createChannel1 = (audioContext) => {
       console.error("[Channel1] 오실레이터를 세팅하는데 실패했습니다.", error);
       state.oscillator = null;
     }
-  };
+  }
 
-  const updateSweep = (cycles) => {
+  function updateSweep(cycles: number): void {
     if (!state.sweepEnabled || state.sweepTime === 0) return;
 
     state.sweepTimer -= cycles;
@@ -123,9 +177,9 @@ export const createChannel1 = (audioContext) => {
         updateFrequency(state, audioContext);
       }
     }
-  };
+  }
 
-  const trigger = () => {
+  function trigger(): void {
     if (!state.oscillator) setupOscillator();
     if (state.lengthCounter === 0) {
       state.lengthCounter = 64 - (state.registers.NR11 & 0x3f);
@@ -134,36 +188,36 @@ export const createChannel1 = (audioContext) => {
     updateDutyCycle();
     updateVolume(state, audioContext);
     updateFrequency(state, audioContext);
-  };
+  }
 
-  const step = (cycles) => {
+  function step(cycles: number): void {
     if (!state.enabled) return;
     updateLength(state, audioContext);
     updateSweep(cycles);
     updateEnvelope(state, audioContext, cycles);
-  };
+  }
 
-  const enable = () => {
+  function enable(): void {
     if (!state.enabled) trigger();
-  };
+  }
 
-  const disable = () => {
+  function disable(): void {
     disableChannel(state, "Channel1", audioContext);
-  };
+  }
 
-  const setMasterVolume = (volume) => {
+  function setMasterVolume(volume: number): void {
     state.masterVolume = volume;
     updateVolume(state, audioContext);
-  };
+  }
 
-  const connect = () => {
+  function connect(): void {
     if (state.enabled) {
       setupNodes(state, audioContext, "Channel1");
       setupOscillator();
     }
-  };
+  }
 
-  const disconnect = () => {
+  function disconnect(): void {
     if (state.gainNode) {
       state.gainNode.gain.setValueAtTime(state.gainNode.gain.value, audioContext.currentTime);
       state.gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.05);
@@ -173,9 +227,9 @@ export const createChannel1 = (audioContext) => {
     } else {
       disconnectNodes(state, "Channel1");
     }
-  };
+  }
 
-  const readRegister = (address) => {
+  function readRegister(address: number): number {
     switch (address) {
       case 0xff10:
         return state.registers.NR10;
@@ -190,9 +244,9 @@ export const createChannel1 = (audioContext) => {
       default:
         return 0xff;
     }
-  };
+  }
 
-  const writeRegister = (address, value) => {
+  function writeRegister(address: number, value: number): void {
     switch (address) {
       case 0xff10:
         state.registers.NR10 = value;
@@ -226,9 +280,9 @@ export const createChannel1 = (audioContext) => {
         updateFrequency(state, audioContext);
         break;
     }
-  };
+  }
 
-  const clearBuffer = () => {
+  function clearBuffer(): void {
     try {
       if (state.oscillator) {
         state.oscillator.stop();
@@ -246,7 +300,7 @@ export const createChannel1 = (audioContext) => {
     } catch (error) {
       console.error("[Channel 1] 버퍼 초기화 중 오류 발생:", error);
     }
-  };
+  }
 
   return {
     writeRegister,
@@ -257,7 +311,7 @@ export const createChannel1 = (audioContext) => {
     connect,
     disconnect,
     setMasterVolume,
-    setPanning: (left, right) => {
+    setPanning: (left: boolean, right: boolean) => {
       state.leftEnabled = left;
       state.rightEnabled = right;
       setPanning(state, audioContext);
@@ -265,7 +319,7 @@ export const createChannel1 = (audioContext) => {
     isEnabled: () => state.enabled,
     updateLength: () => updateLength(state),
     updateSweep,
-    updateEnvelope: () => updateEnvelope(state, audioContext),
+    updateEnvelope: () => updateEnvelope(state, audioContext, 0),
     clearBuffer,
   };
-};
+}
