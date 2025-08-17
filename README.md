@@ -115,7 +115,7 @@
 그러기 위해선, 게임 보이만의 메모리 맵을 구현해야했습니다.
 게임 보이 메모리 구조를 조사한 결과를 토대로 설계하여 코드를 작성하였습니다.
 
-Game Boy 메모리 맵 구조 <br/>
+#### Game Boy 메모리 맵 구조 <br/>
 <img width="323" height="427" alt="memory-map" src="https://github.com/user-attachments/assets/2201f49b-dea5-4295-ae76-9d7cf723bf88" />
 
 그리고 각 메모리 영역마다 다른 접근 방식이 필요했습니다:
